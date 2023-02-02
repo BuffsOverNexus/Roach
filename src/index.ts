@@ -3,12 +3,19 @@ import { Client, Message } from 'discord.js';
 import express from "express";
 const prisma = new PrismaClient();
 const client = new Client({ intents: [] });
+const environment = process.env.RAILWAY_ENVIRONMENT || "development";
 
-require("dotenv").config();
+console.log("Environment: %s", environment);
+
+if (environment == "development")
+  require("dotenv").config();
 
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+console.log("Port: %s", port);
+console.log("Token: %s", process.env.DISCORD_TOKEN);
 
 app.use(express.json());
 app.use(express.raw({ type: "application/vnd.custom-type" }));
@@ -31,7 +38,7 @@ app.get("/user/:id", async(req, res) => {
   
     res.json(user);
   } catch {
-    res.status(400).send("Invalid type.");
+    res.status(400).send("Invalid type given for userId.");
   }
 });
 
@@ -46,10 +53,10 @@ client.on('ready', () => {
   });
 });
 
-client.on('message', (message) => {
+client.on('message', (message: Message) => {
   if (message.content === 'ping') {
     message.reply('pong');
   }
 });
 
-client.login();
+client.login(process.env.DISCORD_TOKEN);
