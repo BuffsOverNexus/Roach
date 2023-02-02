@@ -10,7 +10,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 model User {
   id        Int @id @default(autoincrement())
   rawId     String @unique
@@ -20,7 +19,6 @@ model User {
   guilds    Guild[]
 }
 
-// 
 model Guild {
   id        Int @id @default(autoincrement())
   rawId     String @unique
