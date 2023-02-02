@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 import express from "express";
-
 const prisma = new PrismaClient();
 
 const app = express();
@@ -19,21 +18,12 @@ app.get("/users", async(req, res) => {
 })
 
 app.get("/user/:id", async(req, res) => {
-  const id = req.params.id;
+  const id = Number(req.params.id);
   const user = await prisma.user.findUnique({
     where: { id }
   })
 })
 
-app.post("/user", async (req, res) => {
-  const user = await prisma.user.create({
-    data: {
-      completed: false,
-      createdAt: new Date(),
-      text: req.body.text ?? "Empty todo",
-    },
-  });
-});
 
 
 app.get("/", async (req, res) => {
