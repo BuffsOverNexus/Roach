@@ -31,3 +31,4 @@ dist/
 .env
 .env-dev
 src/example.ts
+.vscode
