@@ -1,25 +1,40 @@
 import { PrismaClient } from "@prisma/client";
-import { Client, Message } from 'discord.js';
+import { Client, Message, GatewayIntentBits } from 'discord.js';
 import express from "express";
-const prisma = new PrismaClient();
-const client = new Client({ intents: [] });
-const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 
-console.log("Environment: %s", environment);
+const environment = process.env.RAILWAY_ENVIRONMENT || "local";
+const port = process.env.PORT || 3000;
 
 if (environment == "local")
   require("dotenv").config();
 
+// Prisma Client
+const prisma = new PrismaClient();
 
+// Discord Client
+const client = new Client({ intents: [
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildMembers,
+] });
+
+// Express app
 const app = express();
-const port = process.env.PORT || 3000;
 
-console.log("Port: %s", port);
-console.log("Token: %s", process.env.DISCORD_TOKEN);
-
+// Express setup
 app.use(express.json());
 app.use(express.raw({ type: "application/vnd.custom-type" }));
 app.use(express.text({ type: "text/html" }));
+
+console.log("Environment: %s", environment);
+
+// Only need this if it is local
+if (environment == "local")
+  require("dotenv").config();
+
+// Debugging
+console.log("Port: %s", port);
+console.log("Token: %s", process.env.DISCORD_TOKEN);
 
 app.get("/users", async(req, res) => {
   const users = await prisma.user.findMany({
@@ -53,7 +68,7 @@ client.on('ready', () => {
   });
 });
 
-client.on('message', (message: Message) => {
+client.on('messageCreate', (message: Message) => {
   if (message.content === 'ping') {
     message.reply('pong');
   }
