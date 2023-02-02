@@ -3,11 +3,11 @@ import { Client, Message } from 'discord.js';
 import express from "express";
 const prisma = new PrismaClient();
 const client = new Client({ intents: [] });
-const environment = process.env.RAILWAY_ENVIRONMENT || "development";
+const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 
 console.log("Environment: %s", environment);
 
-if (environment == "development")
+if (environment == "local")
   require("dotenv").config();
 
 
