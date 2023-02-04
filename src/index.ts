@@ -1,14 +1,15 @@
 import { PrismaClient } from "@prisma/client";
-import { Client, Message, GatewayIntentBits, Partials } from 'discord.js';
+import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import express from "express";
 import session from "express-session";
 import { send } from "process";
 import querystring from 'querystring';
 import { handleAddReaction } from "./reaction/add_reaction";
-import { createUser, getAllUsers, getUser } from "./api/users";
+import { createUser, getUser } from "./api/users";
 import { handleRemoveReaction } from "./reaction/remove_reaction";
-import { createGuild, getGuild, getGuildsFromUser } from "./api/guilds";
-import { createReactionFromEmoteId, createReactionFromEmoteName } from "./api/reactions";
+import { createGuild, getAllGuilds, getGuild, getGuildsFromUser } from "./api/guilds";
+import { createReactionFromEmoteId, createReactionFromEmoteName, getReactionsInGuild } from "./api/reactions";
+import { ensureAllGuilds } from "./bot/ready";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -130,31 +131,54 @@ app.post("/guild", async (req, res) => {
 });
 
 app.post("/reaction", async (req, res) => {
-  if (req.body.guildId && req.body.messageId && req.body.roleId) {
-    const messageId = String(req.body.messageId);
-    const guildId = String(req.body.guildId);
-    const roleId = String(req.body.roleId);
-    if (req.body.emoteName) {
-      const emoteName = String(req.body.emoteName);
-      const reaction = await createReactionFromEmoteName(prisma, messageId, roleId, guildId, emoteName);
-      res.json(reaction);
-    } else if (req.body.emoteId) {
-      const emoteId = String(req.body.emoteId);
-      const reaction = await createReactionFromEmoteId(prisma, messageId, roleId, guildId, emoteId);
-      res.json(reaction);
+  try {
+    if (req.body.guildId && req.body.messageId && req.body.roleId && req.body.roleName) {
+      const messageId = String(req.body.messageId);
+      const guildId = String(req.body.guildId);
+      const roleId = String(req.body.roleId);
+      const roleName = String(req.body.roleName);
+
+      if (req.body.emoteName) {
+        const emoteName = String(req.body.emoteName);
+        const reaction = await createReactionFromEmoteName(prisma, messageId, roleId, guildId, emoteName, roleName);
+        res.json(reaction);
+      } else if (req.body.emoteId) {
+        const emoteId = String(req.body.emoteId);
+        const reaction = await createReactionFromEmoteId(prisma, messageId, roleId, guildId, emoteId, roleName);
+        res.json(reaction);
+      } else {
+        res.status(400).send("This request requires: emoteName or emoteId");
+      }
     } else {
-      res.status(400).send("This request requires: emoteName or emoteId");
+      res.status(400).send("This request requires: guildId, messageId, roleId, (emoteName or emoteId)");
     }
-  } else {
-    res.status(400).send("This request requires: guildId, messageId, roleId, (emoteName or emoteId)");
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send("An error has occurred. Contact the Roach team.");
+  }
+});
+
+app.get("/reaction", async (req, res) => {
+  try {
+    if (req.query.guildId) {
+      const guildId = String(req.query.guildId);
+      const reactions = await getReactionsInGuild(prisma, guildId);
+      res.json(reactions);
+    } else {
+      res.status(400).send("This request requires: guildId");
+    }
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send("An error has occurred. Contact the Roach team.");
   }
 });
 
 // --- Discord Events ---
-client.on('ready', () => {
-  console.log('Roach is ready to ride!');
+client.on('ready', async () => {
+  console.log('Mounting Roach...!');
+  console.log("Roach is ready to ride!");
   app.listen(port, () => {
-    console.log('Server is running on http://%s:%s', host, port);
+    console.log('Server is running on https://%s:%s', host, port);
   });
 });
 
@@ -169,6 +193,11 @@ client.on('messageReactionRemove', async (reaction, user) => {
 
 client.login(process.env.DISCORD_TOKEN);
 
+
+/**
+ * 
+ * @returns The current environment given in the secret.
+ */
 export function getEnvironment() {
   return environment;
 }

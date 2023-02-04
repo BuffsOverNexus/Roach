@@ -38,6 +38,7 @@ model Reaction {
   emoteId   String?
   emoteName String? 
   roleId    String
+  roleName  String
   contents  String @default("React to the role given the emotes below:")
   // A reaction can have one guild. A guild can have many reactions.
   guild     Guild @relation(fields: [guildId], references: [id])

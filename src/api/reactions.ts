@@ -3,7 +3,7 @@ import { getGuild } from "./guilds";
 
 
 
-export async function createReactionFromEmoteId(prisma: PrismaClient, messageId: string, roleId: string, guildId: string, emoteId: string) {
+export async function createReactionFromEmoteId(prisma: PrismaClient, messageId: string, roleId: string, guildId: string, emoteId: string, roleName: string) {
     // Check if guild exists
     const guild = await getGuild(prisma, guildId);
 
@@ -29,6 +29,7 @@ export async function createReactionFromEmoteId(prisma: PrismaClient, messageId:
                     messageId: messageId,
                     roleId: roleId,
                     guildId: guild.id,
+                    roleName: roleName
                     emoteId: emoteId
                 }
             });
@@ -39,7 +40,7 @@ export async function createReactionFromEmoteId(prisma: PrismaClient, messageId:
     }
 }
 
-export async function createReactionFromEmoteName(prisma: PrismaClient, messageId: string, roleId: string, guildId: string, emoteName: string) {
+export async function createReactionFromEmoteName(prisma: PrismaClient, messageId: string, roleId: string, guildId: string, emoteName: string, roleName: roleName) {
     // Check if guild exists
     const guild = await getGuild(prisma, guildId);
 
@@ -64,6 +65,7 @@ export async function createReactionFromEmoteName(prisma: PrismaClient, messageI
                     messageId: messageId,
                     roleId: roleId,
                     guildId: guild.id,
+                    roleName: roleName,
                     emoteName: emoteName
                 }
             });
@@ -73,4 +75,20 @@ export async function createReactionFromEmoteName(prisma: PrismaClient, messageI
     } else {
         return null;
     }  
+}
+
+export async function getReactionsInGuild(prisma: PrismaClient, rawId: string) {
+    // Check if guild exists
+    const guild = await prisma.guild.findUnique({ 
+        where: { rawId },
+        include: {
+            reactions: true
+        }
+    });
+
+    if (guild) {
+        return guild.reactions;
+    } else {
+        return [];
+    }
 }

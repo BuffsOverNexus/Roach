@@ -42,3 +42,9 @@ export async function getGuildsFromUser(prisma: PrismaClient, rawId: string) {
     }
     return null;
 }
+
+export async function getAllGuilds(prisma: PrismaClient) {
+    // This is expensive...
+    const guilds = await prisma.user.findMany();
+    return guilds;
+}
