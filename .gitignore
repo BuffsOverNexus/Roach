@@ -28,3 +28,7 @@ yarn-error.log*
 
 # out dir
 dist/
+.env
+.env-dev
+src/example.ts
+.vscode
