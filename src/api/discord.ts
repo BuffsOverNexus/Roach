@@ -1,4 +1,4 @@
-import { Client } from "discord.js";
+import { ChannelType, Client } from "discord.js";
 
 
 export async function getAllRolesInGuild(client: Client, guildId: string) {
@@ -13,7 +13,7 @@ export async function getAllRolesInGuild(client: Client, guildId: string) {
 export async function getAllGuildsOwnedByUser(client: Client, userId: string) {
     const guilds = await client.guilds.cache;
     if (guilds) {
-        return guilds;
+        return guilds.filter(guild => guild.ownerId === userId);
     } else {
         return [];
     }
@@ -35,6 +35,17 @@ export async function createRole(client: Client, guildId: string, roleName: stri
             name: roleName
         });
         return role;
+    } else {
+        return null;
+    }
+}
+
+export async function getAllChannelsInGuild(client: Client, guildId: string) {
+    const guild = await client.guilds.fetch(guildId);
+    if (guild) {
+        // Only gather channels with the type of text
+        const channels = guild.channels.cache.filter(channel => channel.type === ChannelType.GuildText);
+        return channels;
     } else {
         return null;
     }

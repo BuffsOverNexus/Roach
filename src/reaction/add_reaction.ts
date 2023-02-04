@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { MessageReaction, PartialMessageReaction, User, PartialUser, Client } from "discord.js";
+import { MessageReaction, PartialMessageReaction, User, PartialUser, Client, Message, PartialMessage } from "discord.js";
 import { getEnvironment } from "..";
 
 /**
@@ -21,11 +21,8 @@ export async function handleAddReaction(prisma: PrismaClient, client: Client, re
         if (reaction.emoji.id) {
             const emoteId = reaction.emoji.id;
             handleCustomEmote(prisma, client, emoteId, messageId, guildRawId, userId);
-        } else if (reaction.emoji.name) {
-            const emoteName = reaction.emoji.name;
-            handleStandardEmote(prisma, client, emoteName, messageId, guildRawId, userId);
         } else {
-            console.error("Neither emoji id or name is present.");
+            console.error("Error: emoteId is not present.");
         }
     }
       
@@ -52,25 +49,6 @@ async function handleCustomEmote(prisma: PrismaClient, client: Client, emoteId: 
     }
 }
 
-async function handleStandardEmote(prisma: PrismaClient, client: Client, emoteName: string, messageId: string, guildRawId: string, userId: string) {
-    // Gather the emote if it exists
-    const savedReaction = await prisma.reaction.findFirst({
-        where: {
-            messageId: messageId,
-            emoteName: emoteName as string,
-            guild: { rawId: guildRawId }
-        }
-    });
-
-    if (savedReaction) {
-        // Gather the role id
-        addRole(client, savedReaction.roleId.toString(), guildRawId, userId);
-    } else {
-        if (getEnvironment() != "production")
-            console.log("Generic Emote (message, emoteName, raw_guild) does not exist: (%s, %s, %s)", messageId, emoteName, guildRawId);
-    }
-}
-
 async function addRole(client: Client, roleId: string, guildRawId: string, userId: string) {
     const guild = client.guilds.cache.get(guildRawId);
     if (guild) {
@@ -90,3 +68,11 @@ async function addRole(client: Client, roleId: string, guildRawId: string, userI
     }
 }
 
+export async function handleRemoveMessage(prisma: PrismaClient, message: Message | PartialMessage) {
+    // Delete them as they are no longer needed
+    await prisma.reaction.deleteMany({
+        where: {
+            messageId: message.id
+        }
+    });
+}

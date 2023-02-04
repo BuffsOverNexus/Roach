@@ -39,43 +39,6 @@ export async function createReactionFromEmoteId(prisma: PrismaClient, messageId:
     }
 }
 
-export async function createReactionFromEmoteName(prisma: PrismaClient, messageId: string, roleId: string, guildId: string, emoteName: string, roleName: string) {
-    // Check if guild exists
-    const guild = await getGuild(prisma, guildId);
-
-    if (guild) {
-        // Check if reaction exists
-        const existingReaction = await prisma.reaction.findFirst({
-            where: {
-                messageId: messageId,
-                roleId: roleId,
-                guild: {
-                    id: guild.id
-                },
-                emoteName: emoteName
-            }
-        });
-
-        if (existingReaction) {
-            return existingReaction;
-        } else {
-            const createdReaction = await prisma.reaction.create({ 
-                data: {
-                    messageId: messageId,
-                    roleId: roleId,
-                    guildId: guild.id,
-                    roleName: roleName,
-                    emoteName: emoteName
-                }
-            });
-
-            return createdReaction;
-        }
-    } else {
-        return null;
-    }  
-}
-
 export async function getReactionsInGuild(prisma: PrismaClient, rawId: string) {
     // Check if guild exists
     const guild = await prisma.guild.findUnique({ 

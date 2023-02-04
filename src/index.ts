@@ -1,13 +1,15 @@
 import { PrismaClient } from "@prisma/client";
-import { Client, GatewayIntentBits, Partials } from 'discord.js';
+import { Client, GatewayIntentBits, Message, PartialMessage, Partials } from 'discord.js';
 import express from "express";
 import session from "express-session";
-import { handleAddReaction } from "./reaction/add_reaction";
+import { handleAddReaction, handleRemoveMessage } from "./reaction/add_reaction";
 import { createUser, getUser } from "./api/users";
 import { handleRemoveReaction } from "./reaction/remove_reaction";
 import { createGuild, getGuild, getGuildsFromUser } from "./api/guilds";
-import { createReactionFromEmoteId, createReactionFromEmoteName, getReactionsInGuild } from "./api/reactions";
-import { createRole, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
+import { createReactionFromEmoteId, getReactionsInGuild } from "./api/reactions";
+import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
+import { createMessage } from "./message/create_message";
+import { ReactionRequest } from "./models/reaction_request";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -61,14 +63,9 @@ console.log("Environment: %s", environment);
 if (environment == "local")
   require("dotenv").config();
 
-// Debugging
-console.log("Port: %s", port);
-console.log("Token: %s", process.env.DISCORD_TOKEN);
-
 // Get specific user
 app.get("/user/:id", async (req, res) => {
     try {
-      console.log(typeof req.params.id);
       const user = await getUser(prisma, req.params.id.toString());
       res.json(user);
     } catch (e: any) {
@@ -95,17 +92,26 @@ app.post("/user", async (req, res) => {
 
 app.get("/guild/:id", async (req, res) => {
   try {
-    const guild = await getGuild(prisma, req.params.id.toString());
-    res.json(guild);
-  } catch {
-    res.status(400).send("Invalid type given for guild id");
+    if (req.params.id) {
+      const guild = await getGuild(prisma, req.params.id.toString());
+      res.json(guild);
+    } else {
+      res.status(400).send("This API requires: id (raw guild id)");
+    }
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send("Invalid type given for guild id");
   }
 });
 
 app.get("/user/guild/:id", async (req, res) => {
   try {
-    const guilds = await getGuildsFromUser(prisma, req.params.id.toString());
-    res.json(guilds);
+    if (req.params.id) {
+      const guilds = await getGuildsFromUser(prisma, req.params.id.toString());
+      res.json(guilds);
+    } else {
+      res.status(400).send("");
+    }
   } catch (e: any) {
     console.log(e);
     res.status(500).send("An error has occurred when retrieving user guilds.");
@@ -114,11 +120,13 @@ app.get("/user/guild/:id", async (req, res) => {
 
 app.post("/guild", async (req, res) => {
   try {
-    if (req.body.userId && req.body.guildId && req.body.guildName) {
+    if (req.body.userId && req.body.guildId && req.body.guildName && req.body.channelName && req.body.channelId) {
       const userId = String(req.body.userId);
       const guildId = String(req.body.guildId);
       const guildName = String(req.body.guildName);
-      const guild = await createGuild(prisma, userId, guildId, guildName);
+      const channelName = String(req.body.channelName);
+      const channelId = String(req.body.channelId);
+      const guild = await createGuild(prisma, userId, guildId, guildName, channelName, channelId);
       res.json(guild);
     } else {
       res.status(400).send("Request requires: guildId, userId, guildName");
@@ -136,16 +144,12 @@ app.post("/reaction", async (req, res) => {
       const roleId = String(req.body.roleId);
       const roleName = String(req.body.roleName);
 
-      if (req.body.emoteName) {
-        const emoteName = String(req.body.emoteName);
-        const reaction = await createReactionFromEmoteName(prisma, messageId, roleId, guildId, emoteName, roleName);
-        res.json(reaction);
-      } else if (req.body.emoteId) {
+      if (req.body.emoteId) {
         const emoteId = String(req.body.emoteId);
         const reaction = await createReactionFromEmoteId(prisma, messageId, roleId, guildId, emoteId, roleName);
         res.json(reaction);
       } else {
-        res.status(400).send("This request requires: emoteName or emoteId");
+        res.status(400).send("This request requires: emoteId");
       }
     } else {
       res.status(400).send("This request requires: guildId, messageId, roleId, (emoteName or emoteId)");
@@ -225,6 +229,21 @@ app.get("/discord/emotes", async (req, res) => {
   }
 });
 
+app.get("/discord/channels", async (req, res) => {
+  try {
+    if (req.query.guildId) {
+      const guildId = String(req.query.guildId);
+      const channels = await getAllChannelsInGuild(client, guildId);
+      res.json(channels);
+    } else {
+      res.status(400).send("This API requires: guildId");
+    }
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send("An error has occurred. Contact the Roach team.");
+  }
+})
+
 /**
  * Create a role.
  */
@@ -244,6 +263,33 @@ app.post("/discord/role", async (req, res) => {
   }
 });
 
+app.post("/message", async (req, res) => {
+  // Create a message in the designated <channel> and update all reactions.
+  // Sent: channel (id, name), reactions (emoteId, roleId, guildId)
+  try {
+    // Check for the channel information
+    if (req.body.channelId && req.body.guildId) {
+      // Check for the reaction information
+      if (req.body.reactions) {
+        // Gather all reactions
+        const reactions = req.body.reactions;
+        const guildId = String(req.body.guildId);
+        const channelId = String(req.body.channelId);
+        const createdMessage = await createMessage(prisma, client, channelId, guildId, reactions);
+        res.json(createdMessage);
+      } else {
+        res.status(400).send("This API requires: reactions (emoteId, roleId)");
+      }
+    } else {
+      res.status(400).send("This API requires: channelId, guildId");
+    }
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send("An error has occurred. Contact the Roach team.");
+  }
+
+});
+
 // --- Discord Events ---
 client.on('ready', async () => {
   console.log('Mounting Roach...!');
@@ -255,12 +301,20 @@ client.on('ready', async () => {
 
 // When the user add a reaction, add the role.
 client.on('messageReactionAdd', async (reaction, user) => {
-  await handleAddReaction(prisma, client, reaction, user);
+  if (!user.bot)
+    await handleAddReaction(prisma, client, reaction, user);
 });
 
 client.on('messageReactionRemove', async (reaction, user) => {
-  await handleRemoveReaction(prisma, client, reaction, user);
+  if (!user.bot)
+    await handleRemoveReaction(prisma, client, reaction, user);
 }); 
+
+// When the user deletes a message, ensure it's not a message we care about.
+// Otherwise, delete ALL reaction roles.
+client.on('messageDelete', async (message: Message | PartialMessage) => {
+  await handleRemoveMessage(prisma, message);
+});
 
 client.login(process.env.DISCORD_TOKEN);
 

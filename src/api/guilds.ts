@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { getUser } from "./users";
 
-export async function createGuild(prisma: PrismaClient, userId: string, guildId: string, name: string) {
+export async function createGuild(prisma: PrismaClient, userId: string, guildId: string, name: string, channelId: string, channelName: string) {
     // Acquire user
     const user = await getUser(prisma, userId);
     if (user) {
@@ -12,7 +12,9 @@ export async function createGuild(prisma: PrismaClient, userId: string, guildId:
                 data: {
                     rawId: guildId,
                     name: name,
-                    userId: user.id
+                    userId: user.id, 
+                    channelId: channelId,
+                    channelName: channelName
                 }
             });
             return createdGuild;

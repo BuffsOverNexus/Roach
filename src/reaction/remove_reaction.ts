@@ -15,11 +15,8 @@ export async function handleRemoveReaction(prisma: PrismaClient, client: Client,
         if (reaction.emoji.id) {
             const emoteId = reaction.emoji.id;
             removeCustomEmote(prisma, client, emoteId, messageId, guildRawId, userId);
-        } else if (reaction.emoji.name) {
-            const emoteName = reaction.emoji.name;
-            removeStandardEmote(prisma, client, emoteName, messageId, guildRawId, userId);
         } else {
-            console.error("Neither emoji id or name is present.");
+            console.error("Error: emojiId is not present.");
         }
     } else {
         console.error("Reaction does not have message or id.");
@@ -43,24 +40,6 @@ async function removeCustomEmote(prisma: PrismaClient, client: Client, emoteId: 
         await removeRole(client, savedReaction.roleId.toString(), guildRawId, userId);
     } else {
         console.log("Custom Emote (message, emoteId, raw_guild) does not exist: (%s, %s, %s)", messageId, emoteId, guildRawId);
-    }
-}
-
-async function removeStandardEmote(prisma: PrismaClient, client: Client, emoteName: string, messageId: string, guildRawId: string, userId: string) {
-    // Gather the emote if it exists
-    const savedReaction = await prisma.reaction.findFirst({
-        where: {
-            messageId: messageId,
-            emoteName: emoteName as string,
-            guild: { rawId: guildRawId }
-        }
-    });
-
-    if (savedReaction) {
-        // Gather the role id
-        await removeRole(client, savedReaction.roleId.toString(), guildRawId, userId);
-    } else {
-        console.log("Generic Emote (message, emoteName, raw_guild) does not exist: (%s, %s, %s)", messageId, emoteName, guildRawId);
     }
 }
 
