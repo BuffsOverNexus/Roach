@@ -1,0 +1,13 @@
+-- DropIndex
+DROP INDEX "Reaction_guildId_key";
+
+-- AlterTable
+ALTER TABLE "Guild" ALTER COLUMN "rawId" SET DATA TYPE TEXT;
+
+-- AlterTable
+ALTER TABLE "Reaction" ALTER COLUMN "messageId" SET DATA TYPE TEXT,
+ALTER COLUMN "emoteId" SET DATA TYPE TEXT,
+ALTER COLUMN "roleId" SET DATA TYPE TEXT;
+
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "rawId" SET DATA TYPE TEXT;
