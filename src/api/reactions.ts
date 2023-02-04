@@ -2,7 +2,6 @@ import { PrismaClient } from "@prisma/client";
 import { getGuild } from "./guilds";
 
 
-
 export async function createReactionFromEmoteId(prisma: PrismaClient, messageId: string, roleId: string, guildId: string, emoteId: string, roleName: string) {
     // Check if guild exists
     const guild = await getGuild(prisma, guildId);
@@ -40,7 +39,7 @@ export async function createReactionFromEmoteId(prisma: PrismaClient, messageId:
     }
 }
 
-export async function createReactionFromEmoteName(prisma: PrismaClient, messageId: string, roleId: string, guildId: string, emoteName: string, roleName: roleName) {
+export async function createReactionFromEmoteName(prisma: PrismaClient, messageId: string, roleId: string, guildId: string, emoteName: string, roleName: string) {
     // Check if guild exists
     const guild = await getGuild(prisma, guildId);
 

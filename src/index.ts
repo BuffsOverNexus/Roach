@@ -2,14 +2,12 @@ import { PrismaClient } from "@prisma/client";
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import express from "express";
 import session from "express-session";
-import { send } from "process";
-import querystring from 'querystring';
 import { handleAddReaction } from "./reaction/add_reaction";
 import { createUser, getUser } from "./api/users";
 import { handleRemoveReaction } from "./reaction/remove_reaction";
-import { createGuild, getAllGuilds, getGuild, getGuildsFromUser } from "./api/guilds";
+import { createGuild, getGuild, getGuildsFromUser } from "./api/guilds";
 import { createReactionFromEmoteId, createReactionFromEmoteName, getReactionsInGuild } from "./api/reactions";
-import { ensureAllGuilds } from "./bot/ready";
+import { createRole, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -166,6 +164,79 @@ app.get("/reaction", async (req, res) => {
       res.json(reactions);
     } else {
       res.status(400).send("This request requires: guildId");
+    }
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send("An error has occurred. Contact the Roach team.");
+  }
+});
+
+/**
+ * Retrieve all Roles in a Guild
+ */
+app.get("/discord/roles", async (req, res) => {
+  try {
+    if (req.query.guildId) {
+      const guildId = String(req.query.guildId);
+      const roles = await getAllRolesInGuild(client, guildId);
+      res.json(roles);
+    } else {
+      res.status(400).send("This API requires: guildId");
+    }
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send("An error has occurred. Contact the Roach team.");
+  }
+});
+
+/**
+ * Retrieve all Guilds a user owns.
+ */
+app.get("/discord/guilds", async (req, res) => {
+  try {
+    if (req.query.userId) {
+      const userId = String(req.query.userId);
+      const guilds = await getAllGuildsOwnedByUser(client, userId);
+      res.json(guilds);
+    } else {
+      res.status(400).send("This API requires: userId");
+    }
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send("An error has occurred. Contact the Roach team.");
+  }
+});
+
+/**
+ * Retrieves all Emojis from a Guild
+ */
+app.get("/discord/emotes", async (req, res) => {
+  try {
+    if (req.query.guildId) {
+      const guildId = String(req.query.guildId);
+      const emotes = await getAllEmotesInGuild(client, guildId);
+      res.json(emotes);
+    } else {
+      res.status(400).send("This API requires: guildId");
+    }
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send("An error has occurred. Contact the Roach team.");
+  }
+});
+
+/**
+ * Create a role.
+ */
+app.post("/discord/role", async (req, res) => {
+  try {
+    if (req.body.roleName && req.body.guildId) {
+      const roleName = String(req.body.roleName);
+      const guildId = String(req.body.guildId);
+      const role = await createRole(client, guildId, roleName);
+      res.json(role);
+    } else {
+      res.status(400).send("This API requires: guildId, roleName");
     }
   } catch (e: any) {
     console.log(e);
