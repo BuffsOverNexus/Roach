@@ -29,7 +29,7 @@ export async function createReactionFromEmoteId(prisma: PrismaClient, messageId:
                     messageId: messageId,
                     roleId: roleId,
                     guildId: guild.id,
-                    roleName: roleName
+                    roleName: roleName,
                     emoteId: emoteId
                 }
             });
