@@ -1,4 +1,5 @@
 import { ChannelType, Client } from "discord.js";
+import { GuildResponse } from "../models/guild_response";
 
 
 export async function getAllRolesInGuild(client: Client, guildId: string) {
@@ -12,8 +13,16 @@ export async function getAllRolesInGuild(client: Client, guildId: string) {
 
 export async function getAllGuildsOwnedByUser(client: Client, userId: string) {
     const guilds = await client.guilds.cache;
+    const guildResponses: GuildResponse[] = [];
+    guilds.filter(guild => guild.ownerId === userId).forEach(guild => {
+        guildResponses.push({
+            id: guild.id,
+            ownerId: guild.ownerId,
+            name: guild.name
+        });
+    });
     if (guilds) {
-        return guilds.filter(guild => guild.ownerId === userId);
+        return guildResponses;
     } else {
         return [];
     }
