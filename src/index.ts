@@ -275,8 +275,8 @@ app.post("/message", async (req, res) => {
         const reactions = req.body.reactions;
         const guildId = String(req.body.guildId);
         const channelId = String(req.body.channelId);
-        const handleMessage = await handleMessage(prisma, client, channelId, guildId, reactions);
-        res.json(createdMessage);
+        const result = await handleMessage(prisma, client, channelId, guildId, reactions);
+        res.json(result);
       } else {
         res.status(400).send("This API requires: reactions (emoteId, roleId)");
       }

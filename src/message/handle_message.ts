@@ -22,11 +22,9 @@ export async function handleMessage(prisma: PrismaClient, client: Client, channe
 
                 if (savedGuild) {
                     // Delete all messages from Roach given the channel.
-                    const messageIds = [];
                     const existingMessagesInChannel = await channel.messages.fetch();
                     existingMessagesInChannel.forEach(async existingMessage => {
                         if (existingMessage.author.id === client.user?.id) {
-                            messageIds.push(existingMessage.id);
                             await existingMessage.delete();
                         }
                     });
