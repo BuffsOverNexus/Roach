@@ -8,7 +8,7 @@ import { handleRemoveReaction } from "./reaction/remove_reaction";
 import { createGuild, getGuild, getGuildsFromUser } from "./api/guilds";
 import { createReactionFromEmoteId, getReactionsInGuild } from "./api/reactions";
 import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
-import { createMessage } from "./message/create_message";
+import { handleMessage } from "./message/handle_message";
 import { ReactionRequest } from "./models/reaction_request";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
@@ -275,7 +275,7 @@ app.post("/message", async (req, res) => {
         const reactions = req.body.reactions;
         const guildId = String(req.body.guildId);
         const channelId = String(req.body.channelId);
-        const createdMessage = await createMessage(prisma, client, channelId, guildId, reactions);
+        const handleMessage = await handleMessage(prisma, client, channelId, guildId, reactions);
         res.json(createdMessage);
       } else {
         res.status(400).send("This API requires: reactions (emoteId, roleId)");
