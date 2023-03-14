@@ -10,6 +10,7 @@ import { createReactionFromEmoteId, getReactionsInGuild } from "./api/reactions"
 import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
 import { handleMessage } from "./message/handle_message";
 import { ReactionRequest } from "./models/reaction_request";
+import  cors  from "cors";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -44,6 +45,7 @@ const app = express().disable("x-powered-by");
 
 
 // Express setup
+app.use(cors());
 app.use(express.json());
 app.use(express.raw({ type: "application/vnd.custom-type" }));
 app.use(express.text({ type: "text/html" }));
@@ -326,3 +328,4 @@ client.login(process.env.DISCORD_TOKEN);
 export function getEnvironment() {
   return environment;
 }
+
