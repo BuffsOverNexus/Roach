@@ -8,8 +8,9 @@ import { handleRemoveReaction } from "./reaction/remove_reaction";
 import { createGuild, getGuild, getGuildsFromUser } from "./api/guilds";
 import { createReactionFromEmoteId, getReactionsInGuild } from "./api/reactions";
 import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
-import { createMessage } from "./message/create_message";
+import { handleMessage } from "./message/handle_message";
 import { ReactionRequest } from "./models/reaction_request";
+import  cors  from "cors";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -44,6 +45,7 @@ const app = express().disable("x-powered-by");
 
 
 // Express setup
+app.use(cors());
 app.use(express.json());
 app.use(express.raw({ type: "application/vnd.custom-type" }));
 app.use(express.text({ type: "text/html" }));
@@ -275,8 +277,8 @@ app.post("/message", async (req, res) => {
         const reactions = req.body.reactions;
         const guildId = String(req.body.guildId);
         const channelId = String(req.body.channelId);
-        const createdMessage = await createMessage(prisma, client, channelId, guildId, reactions);
-        res.json(createdMessage);
+        const result = await handleMessage(prisma, client, channelId, guildId, reactions);
+        res.json(result);
       } else {
         res.status(400).send("This API requires: reactions (emoteId, roleId)");
       }
@@ -326,3 +328,4 @@ client.login(process.env.DISCORD_TOKEN);
 export function getEnvironment() {
   return environment;
 }
+
