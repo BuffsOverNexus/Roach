@@ -21,8 +21,9 @@ export async function createGuild(prisma: PrismaClient, userId: string, guildId:
         } else {
             return guildExists;
         }
+    } else {
+        throw new Error("A user account is required before registering a guild.");
     }
-    return null;
 }
 
 export async function getGuild(prisma: PrismaClient, guildId: string) {
@@ -49,4 +50,14 @@ export async function getAllGuilds(prisma: PrismaClient) {
     // This is expensive...
     const guilds = await prisma.user.findMany();
     return guilds;
+}
+
+export async function getAllGuildsWithMessages(prisma: PrismaClient, guildId: string) {
+    const guild = await prisma.guild.findUnique({
+        where: { rawId: guildId },
+        include: {
+            messages: true
+        }
+    });
+    return guild;
 }

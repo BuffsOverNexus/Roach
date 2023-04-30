@@ -27,11 +27,13 @@ async function removeCustomEmote(prisma: PrismaClient, client: Client, emoteId: 
     // Gather the emote if it exists
     const savedReaction = await prisma.reaction.findFirst({
         where: {
-            messageId: messageId,
-            emoteId: emoteId,
-            guild: { 
-                rawId: guildRawId
-            }
+            message: {
+                rawId: messageId,
+                guild: {
+                    rawId: guildRawId
+                }
+            },
+            emoteId: emoteId
         }
     });
 

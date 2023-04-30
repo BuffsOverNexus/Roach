@@ -29,13 +29,15 @@ export async function handleAddReaction(prisma: PrismaClient, client: Client, re
 }
 
 async function handleCustomEmote(prisma: PrismaClient, client: Client, emoteId: string, messageId: string, guildRawId: string, userId: string) {
-    // Gather the emote if it exists
+    // Determine if the reaction exists within the guild and message.
     const savedReaction = await prisma.reaction.findFirst({
         where: {
-            messageId: messageId,
             emoteId: emoteId,
-            guild: { 
-                rawId: guildRawId
+            message: {
+                rawId: messageId,
+                guild: {
+                    rawId: guildRawId
+                }
             }
         }
     });
@@ -69,10 +71,25 @@ async function addRole(client: Client, roleId: string, guildRawId: string, userI
 }
 
 export async function handleRemoveMessage(prisma: PrismaClient, message: Message | PartialMessage) {
-    // Delete them as they are no longer needed
-    await prisma.reaction.deleteMany({
+    // Gather the message to delete.
+    const savedMessage = await prisma.message.findUnique({
         where: {
-            messageId: message.id
+            rawId: message.id
         }
     });
+
+    if (savedMessage) {
+        // Delete them as they are no longer needed
+        await prisma.message.delete({
+            where: {
+                id: savedMessage.id
+            },
+            // Delete all reactions included.
+            include: {
+                reactions: true
+            }
+        });
+    } else {
+        console.log("Unable to delete message with raw id: %s", message.id);
+    }
 }

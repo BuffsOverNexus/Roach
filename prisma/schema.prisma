@@ -11,37 +11,48 @@ generator client {
 }
 
 model User {
-  id          Int @id @default(autoincrement())
-  rawId       String @unique
-  lastLogin   DateTime  @default(now())
-  createdAt   DateTime @default(now())
-  name        String
+  id        Int      @id @default(autoincrement())
+  rawId     String   @unique
+  lastLogin DateTime @default(now())
+  createdAt DateTime @default(now())
+  name      String
   // A user can have many guilds.
-  guilds      Guild[]
+  guilds    Guild[]
 }
 
 model Guild {
-  id          Int @id @default(autoincrement())
-  rawId       String @unique
-  reactions   Reaction[]
+  id          Int       @id @default(autoincrement())
+  rawId       String    @unique
+  // A guild can have many messages
+  messages    Message[]
   channelId   String
   channelName String
   name        String
   // A user can have many guilds. A guild can only have one user.
-  user        User @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
   userId      Int
+}
 
+model Message {
+  id        Int        @id @default(autoincrement())
+  createdAt DateTime   @default(now())
+  rawId     String?    @unique
+  guild     Guild      @relation(fields: [guildId], references: [id])
+  guildId   Int
+  // This is the title subject of the role reactions.
+  subject     String
+  // Messages can have many reactions
+  reactions  Reaction[]
 }
 
 // Reaction (aka Reaction Message)
 model Reaction {
-  id          Int @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  messageId   String
-  emoteId     String
-  roleId      String
-  roleName    String
-  // A reaction can have one guild. A guild can have many reactions.
-  guild       Guild @relation(fields: [guildId], references: [id])
-  guildId     Int
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  emoteId   String    @unique
+  roleId    String    @unique
+  roleName  String
+  // All reactions have one message.
+  message   Message   @relation(fields: [messageId], references: [id])
+  messageId Int
 }
