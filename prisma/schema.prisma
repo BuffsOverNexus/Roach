@@ -36,7 +36,7 @@ model Guild {
 model Message {
   id        Int        @id @default(autoincrement())
   createdAt DateTime   @default(now())
-  rawId     String
+  rawId     String?    @unique
   guild     Guild      @relation(fields: [guildId], references: [id])
   guildId   Int
   // This is the title subject of the role reactions.
@@ -49,8 +49,8 @@ model Message {
 model Reaction {
   id        Int       @id @default(autoincrement())
   createdAt DateTime  @default(now())
-  emoteId   String
-  roleId    String
+  emoteId   String    @unique
+  roleId    String    @unique
   roleName  String
   // All reactions have one message.
   message   Message   @relation(fields: [messageId], references: [id])
