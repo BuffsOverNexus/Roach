@@ -3,5 +3,6 @@
 export interface GuildResponse {
     id: string,
     name: string,
-    ownerId: string
+    ownerId: string,
+    exists: boolean
 }

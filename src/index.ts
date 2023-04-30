@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import { Client, GatewayIntentBits, Message, PartialMessage, Partials } from 'discord.js';
 import express from "express";
 import session from "express-session";
@@ -142,7 +142,7 @@ app.get("/discord/guilds", async (req, res) => {
   try {
     if (req.query.userId) {
       const userId = String(req.query.userId);
-      const guilds = await getAllGuildsOwnedByUser(client, userId);
+      const guilds = await getAllGuildsOwnedByUser(prisma, client, userId);
       res.json(guilds);
     } else {
       res.status(400).send("This API requires: userId");

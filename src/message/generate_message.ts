@@ -68,9 +68,9 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
                     });
 
                     await addedMessage.reactions.removeAll();
-                        savedMessage.reactions.forEach(async reaction => {
-                            await addedMessage.react(reaction.emoteId);
-                        });
+                    savedMessage.reactions.forEach(async reaction => {
+                        await addedMessage.react(reaction.emoteId);
+                    });
                 }
             } else {
                 throw new Error("The message was not generated because the channel is not a text channel.");

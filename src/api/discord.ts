@@ -3,6 +3,7 @@ import { GuildResponse } from "../models/guild_response";
 import { GuildRole } from "../models/guild_role";
 import { GuildEmote } from "../models/guild_emote";
 import { GuildChannel } from "../models/guild_channel";
+import { PrismaClient } from "@prisma/client";
 
 
 export async function getAllRolesInGuild(client: Client, guildId: string): Promise<GuildRole[]> {
@@ -22,16 +23,30 @@ export async function getAllRolesInGuild(client: Client, guildId: string): Promi
     }
 }
 
-export async function getAllGuildsOwnedByUser(client: Client, userId: string) {
+export async function getAllGuildsOwnedByUser(prisma: PrismaClient, client: Client, userId: string) {
     const guilds = await client.guilds.cache;
     const guildResponses: GuildResponse[] = [];
-    guilds.filter(guild => guild.ownerId === userId).forEach(guild => {
+    guilds.filter(guild => guild.ownerId === userId).forEach((guild) => {
+        // Determine if the guild is in the database
         guildResponses.push({
             id: guild.id,
             ownerId: guild.ownerId,
-            name: guild.name
+            name: guild.name,
+            exists: false
         });
     });
+
+    for (const guildResponse of guildResponses) {
+        const savedGuild = await prisma.guild.findUnique({
+            where: {
+                rawId: guildResponse.id
+            }
+        }); 
+        if (savedGuild) {
+            guildResponse.exists = true;
+        }
+    }
+
     if (guilds) {
         return guildResponses;
     } else {

@@ -13,7 +13,7 @@ export function randomHash(minLength = 10, acc = ''): string {
  * @param res - The response object to control what is sent back via API
  * @param e - The exception that was thrown.
  */
-export function generateException(res: any, e: any) {
+export function generateException(res: any, e: any): void {
     const hash = randomHash();
     console.log(e, hash);
     res.status(500).send("An error has occurred. Contact the Roach team: " + hash);
