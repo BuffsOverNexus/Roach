@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import { Client, GatewayIntentBits, Message, PartialMessage, Partials } from 'discord.js';
 import express from "express";
 import session from "express-session";
@@ -6,11 +6,13 @@ import { handleAddReaction, handleRemoveMessage } from "./reaction/add_reaction"
 import { createUser, getUser } from "./api/users";
 import { handleRemoveReaction } from "./reaction/remove_reaction";
 import { createGuild, getGuild, getGuildsFromUser } from "./api/guilds";
-import { createReactionFromEmoteId, getReactionsInGuild } from "./api/reactions";
+import { createReaction, createReactions, getMessageReactionsInGuild, getReactionsInMessage, getReactionsInMessageById } from "./api/reactions";
 import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
-import { handleMessage } from "./message/handle_message";
-import { ReactionRequest } from "./models/reaction_request";
+import { generateException } from "./util/exception_handling";
 import  cors  from "cors";
+import { addMessage, handleGuildMessages } from "./message/guild_messages";
+import { regenerateMessage } from "./message/generate_message";
+import { ReactionRequest } from "./models/reaction_request";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -71,8 +73,7 @@ app.get("/user/:id", async (req, res) => {
       const user = await getUser(prisma, req.params.id.toString());
       res.json(user);
     } catch (e: any) {
-      console.error(e);
-      res.status(400).send("Invalid type given for userId.");
+      generateException(res, e);
     }
 });
 
@@ -87,8 +88,7 @@ app.post("/user", async (req, res) => {
       res.status(400).send("Invalid rawId or undefined. Required: rawId");
     }
   } catch (e: any) {
-    console.error(e);
-    res.status(500).send("An error has occurred when creating a user.");
+    generateException(res, e);
   }
 });
 
@@ -101,8 +101,7 @@ app.get("/guild/:id", async (req, res) => {
       res.status(400).send("This API requires: id (raw guild id)");
     }
   } catch (e: any) {
-    console.log(e);
-    res.status(500).send("Invalid type given for guild id");
+    generateException(res, e);
   }
 });
 
@@ -115,65 +114,7 @@ app.get("/user/guild/:id", async (req, res) => {
       res.status(400).send("");
     }
   } catch (e: any) {
-    console.log(e);
-    res.status(500).send("An error has occurred when retrieving user guilds.");
-  }
-});
-
-app.post("/guild", async (req, res) => {
-  try {
-    if (req.body.userId && req.body.guildId && req.body.guildName && req.body.channelName && req.body.channelId) {
-      const userId = String(req.body.userId);
-      const guildId = String(req.body.guildId);
-      const guildName = String(req.body.guildName);
-      const channelName = String(req.body.channelName);
-      const channelId = String(req.body.channelId);
-      const guild = await createGuild(prisma, userId, guildId, guildName, channelName, channelId);
-      res.json(guild);
-    } else {
-      res.status(400).send("Request requires: guildId, userId, guildName");
-    }
-  } catch {
-    res.status(500).send("An error occurred when creating a guild.");
-  }
-});
-
-app.post("/reaction", async (req, res) => {
-  try {
-    if (req.body.guildId && req.body.messageId && req.body.roleId && req.body.roleName) {
-      const messageId = String(req.body.messageId);
-      const guildId = String(req.body.guildId);
-      const roleId = String(req.body.roleId);
-      const roleName = String(req.body.roleName);
-
-      if (req.body.emoteId) {
-        const emoteId = String(req.body.emoteId);
-        const reaction = await createReactionFromEmoteId(prisma, messageId, roleId, guildId, emoteId, roleName);
-        res.json(reaction);
-      } else {
-        res.status(400).send("This request requires: emoteId");
-      }
-    } else {
-      res.status(400).send("This request requires: guildId, messageId, roleId, (emoteName or emoteId)");
-    }
-  } catch (e: any) {
-    console.log(e);
-    res.status(500).send("An error has occurred. Contact the Roach team.");
-  }
-});
-
-app.get("/reaction", async (req, res) => {
-  try {
-    if (req.query.guildId) {
-      const guildId = String(req.query.guildId);
-      const reactions = await getReactionsInGuild(prisma, guildId);
-      res.json(reactions);
-    } else {
-      res.status(400).send("This request requires: guildId");
-    }
-  } catch (e: any) {
-    console.log(e);
-    res.status(500).send("An error has occurred. Contact the Roach team.");
+    generateException(res, e);
   }
 });
 
@@ -190,8 +131,7 @@ app.get("/discord/roles", async (req, res) => {
       res.status(400).send("This API requires: guildId");
     }
   } catch (e: any) {
-    console.log(e);
-    res.status(500).send("An error has occurred. Contact the Roach team.");
+    generateException(res, e);
   }
 });
 
@@ -202,14 +142,13 @@ app.get("/discord/guilds", async (req, res) => {
   try {
     if (req.query.userId) {
       const userId = String(req.query.userId);
-      const guilds = await getAllGuildsOwnedByUser(client, userId);
+      const guilds = await getAllGuildsOwnedByUser(prisma, client, userId);
       res.json(guilds);
     } else {
       res.status(400).send("This API requires: userId");
     }
   } catch (e: any) {
-    console.log(e);
-    res.status(500).send("An error has occurred. Contact the Roach team.");
+    generateException(res, e);
   }
 });
 
@@ -226,8 +165,7 @@ app.get("/discord/emotes", async (req, res) => {
       res.status(400).send("This API requires: guildId");
     }
   } catch (e: any) {
-    console.log(e);
-    res.status(500).send("An error has occurred. Contact the Roach team.");
+    generateException(res, e);
   }
 });
 
@@ -241,8 +179,7 @@ app.get("/discord/channels", async (req, res) => {
       res.status(400).send("This API requires: guildId");
     }
   } catch (e: any) {
-    console.log(e);
-    res.status(500).send("An error has occurred. Contact the Roach team.");
+    generateException(res, e);
   }
 })
 
@@ -260,37 +197,159 @@ app.post("/discord/role", async (req, res) => {
       res.status(400).send("This API requires: guildId, roleName");
     }
   } catch (e: any) {
-    console.log(e);
-    res.status(500).send("An error has occurred. Contact the Roach team.");
+    generateException(res, e);
   }
 });
 
-app.post("/message", async (req, res) => {
-  // Create a message in the designated <channel> and update all reactions.
-  // Sent: channel (id, name), reactions (emoteId, roleId, guildId)
+app.post("/guild", async (req, res) => {
   try {
-    // Check for the channel information
-    if (req.body.channelId && req.body.guildId) {
-      // Check for the reaction information
-      if (req.body.reactions) {
-        // Gather all reactions
-        const reactions = req.body.reactions;
-        const guildId = String(req.body.guildId);
-        const channelId = String(req.body.channelId);
-        const result = await handleMessage(prisma, client, channelId, guildId, reactions);
-        res.json(result);
-      } else {
-        res.status(400).send("This API requires: reactions (emoteId, roleId)");
-      }
+    if (req.body.userId && req.body.guildId && req.body.guildName && req.body.channelName && req.body.channelId) {
+      const userId = String(req.body.userId);
+      const guildId = String(req.body.guildId);
+      const guildName = String(req.body.guildName);
+      const channelName = String(req.body.channelName);
+      const channelId = String(req.body.channelId);
+      const guild = await createGuild(prisma, userId, guildId, guildName, channelId, channelName);
+      res.json(guild);
     } else {
-      res.status(400).send("This API requires: channelId, guildId");
+      res.status(400).send("Request requires: guildId, userId, guildName");
     }
   } catch (e: any) {
-    console.log(e);
-    res.status(500).send("An error has occurred. Contact the Roach team.");
+    generateException(res, e);
   }
-
 });
+
+/**
+ * Create a reaction via having a message id and 
+ */
+app.post("/reaction", async (req, res) => {
+  try {
+    if (req.body.guildId && req.body.messageId && req.body.roleId && req.body.roleName && req.body.emoteId) {
+      const messageId = Number(req.body.messageId);
+      const guildId = String(req.body.guildId);
+      const roleId = String(req.body.roleId);
+      const roleName = String(req.body.roleName);
+      const emoteId = String(req.body.emoteId);
+
+      const reaction = await createReaction(prisma, messageId, roleId, emoteId, guildId, roleName);
+      res.json(reaction);
+    } else {
+      res.status(400).send("This request requires: guildId, messageId (non-raw), roleId, emoteId");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+/**
+ * You can create many reactions instead of just one.
+ */
+app.post("/reactions", async (req, res) => {
+  try {
+    if (req.body.guildId && req.body.messageId && req.body.reactions) {
+      const reactions = req.body.reactions as ReactionRequest[];
+      const guildId = String(req.body.guildId);
+      const messageId = Number(req.body.messageId);
+      
+      const createdReactions = await createReactions(prisma, messageId, guildId, reactions);
+      res.json(createdReactions);
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+
+app.get("/reactions", async (req, res) => {
+  try {
+    if (req.query.messageId) {
+      const messageId = String(req.query.messageId);
+      const reactions = await getReactionsInMessage(prisma, messageId);
+      res.json(reactions);
+    } else {
+      res.status(400).send("This request requires: messageId");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+app.get("/reactions/by-id", async (req, res) => {
+  try {
+    if (req.query.messageId) {
+      const messageId = Number(req.query.messageId);
+      const reactions = await getReactionsInMessageById(prisma, messageId);
+      res.json(reactions);
+    } else {
+      res.status(400).send("This request requires: messageId");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+// Return all reactions by guild id.
+app.get("/reactions/by-guild", async (req, res) => {
+  try {
+    if (req.query.guildId) {
+      const guildId = String(req.query.guildId);
+      const reactions = await getMessageReactionsInGuild(prisma, guildId);
+      res.json(reactions);
+    } else {
+      res.status(400).send("This request requires: guildId")
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+// Retrieve all messages of a guild.
+app.get("/messages", async (req, res) => {
+  try {
+    if (req.query.guildId) {
+      const guildId = String(req.query.guildId);
+      const messages = await handleGuildMessages(prisma, guildId);
+      res.json(messages);
+    } else {
+      res.status(400).send("This API requires: guildId");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+// Create a Message object. This does not create a physical message.
+app.post("/message", async (req, res) => {
+  try {
+    if (req.body.guildId && req.body.subject) {
+      const guildId = String(req.body.guildId);
+      const subject = String(req.body.subject);
+
+      const createdMessage = await addMessage(prisma, guildId, subject);
+      res.json(createdMessage);
+    } else {
+      res.status(400).send("This API requires: guildId, subject");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+// Create a message given messageId, regenerate the message.
+app.post("/message/regenerate", async (req, res) => {
+  try {
+    if (req.body.messageId) {
+      const messageId = Number(req.body.messageId);
+      await regenerateMessage(prisma, client, messageId);
+      res.send("Generated/Regenerated message successfully!");
+    } else {
+      res.status(400).send("This API requires: messageId (non-raw)");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
 
 // --- Discord Events ---
 client.on('ready', async () => {
