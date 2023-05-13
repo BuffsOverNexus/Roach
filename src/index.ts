@@ -73,8 +73,9 @@ app.get("/user/:id", async (req, res) => {
       const user = await getUser(prisma, req.params.id.toString());
       if (!user) {
         res.status(400).send("The user does not exist.");
+      } else {
+        res.json(user);
       }
-      res.json(user);
     } catch (e: any) {
       generateException(res, e);
     }
