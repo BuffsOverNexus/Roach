@@ -80,16 +80,21 @@ export async function handleRemoveMessage(prisma: PrismaClient, message: Message
 
     if (savedMessage) {
         // Delete them as they are no longer needed
-        await prisma.message.delete({
+        await prisma.message.update({
             where: {
                 id: savedMessage.id
             },
-            // Delete all reactions included.
-            include: {
-                reactions: true
+            data: {
+                reactions: {
+                    deleteMany: {}
+                }
             }
         });
-    } else {
-        console.log("Unable to delete message with raw id: %s", message.id);
+
+        await prisma.message.delete({
+            where: {
+                id: savedMessage.id
+            }
+        });
     }
 }
