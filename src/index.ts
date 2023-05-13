@@ -71,6 +71,9 @@ if (environment == "local")
 app.get("/user/:id", async (req, res) => {
     try {
       const user = await getUser(prisma, req.params.id.toString());
+      if (!user) {
+        res.status(400).send("The user does not exist.");
+      }
       res.json(user);
     } catch (e: any) {
       generateException(res, e);
