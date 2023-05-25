@@ -5,7 +5,7 @@ import session from "express-session";
 import { handleAddReaction, handleRemoveMessage } from "./reaction/add_reaction";
 import { createUser, getUser } from "./api/users";
 import { handleRemoveReaction } from "./reaction/remove_reaction";
-import { createGuild, getGuild, getGuildsFromUser } from "./api/guilds";
+import { createGuild, getGuild, getGuildsFromUser, updateChannelInGuild } from "./api/guilds";
 import { createReaction, createReactions, getMessageReactionsInGuild, getReactionsInMessage, getReactionsInMessageById } from "./api/reactions";
 import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
 import { generateException } from "./util/exception_handling";
@@ -115,7 +115,7 @@ app.get("/user/guild/:id", async (req, res) => {
       const guilds = await getGuildsFromUser(prisma, req.params.id.toString());
       res.json(guilds);
     } else {
-      res.status(400).send("");
+      res.status(400).send("This API requires: id (user's raw id)");
     }
   } catch (e: any) {
     generateException(res, e);
@@ -217,6 +217,22 @@ app.post("/guild", async (req, res) => {
       res.json(guild);
     } else {
       res.status(400).send("Request requires: guildId, userId, guildName");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+app.patch("/guild/channel", async (req, res) => {
+  try {
+    if (req.body.guildId && req.body.channelName && req.body.channelId) {
+      const guildId = req.body.guildId;
+      const channelName = req.body.channelName;
+      const channelId = req.body.channelId;
+      const updatedGuild = await updateChannelInGuild(prisma, guildId, channelName, channelId);
+      res.json(updatedGuild);
+    } else {
+      res.status(400).send("This API requires: guildId, channelName, guildName");
     }
   } catch (e: any) {
     generateException(res, e);
