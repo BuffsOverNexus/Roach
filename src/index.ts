@@ -70,22 +70,22 @@ if (environment == "local")
 // Get specific user
 app.get("/user/:id", async (req, res) => {
     try {
-      const user = await getUser(prisma, req.params.id.toString());
-      if (!user) {
-        res.status(400).send("The user does not exist.");
-      } else {
+      if (req.params.id) {
+        const userId = req.params.id;
+        const user = await getUser(prisma, userId);
         res.json(user);
+      } else {
+        res.status(400).send("This API requires: id (userId)");
       }
     } catch (e: any) {
       generateException(res, e);
     }
 });
 
-
 // Create user
 app.post("/user", async (req, res) => {
   try {
-    if (req.body.rawId) {
+    if (req.body.rawId && req.body.name) {
       const user = await createUser(prisma, req.body.rawId, req.body.name);
       res.json(user);
     } else {
