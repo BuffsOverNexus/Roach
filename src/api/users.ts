@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 export async function createUser(prisma: PrismaClient, userId: string, name: string) {
     // Check if user exists
     const existingUser = await getUser(prisma, userId);
-    if (await getUser(prisma, userId) == null) {
+    if (!existingUser) {
         const createdUser = await prisma.user.create({
             data: {
                 rawId: userId,
