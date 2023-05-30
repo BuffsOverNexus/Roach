@@ -5,7 +5,7 @@ import session from "express-session";
 import { handleAddReaction, handleRemoveMessage } from "./reaction/add_reaction";
 import { createUser, getUser } from "./api/users";
 import { handleRemoveReaction } from "./reaction/remove_reaction";
-import { createGuild, getGuild, getGuildsFromUser, updateChannelInGuild } from "./api/guilds";
+import { createGuild, getGuild, getGuildById, getGuildsFromUser, updateChannelInGuild } from "./api/guilds";
 import { createReaction, createReactions, getMessageReactionsInGuild, getReactionsInMessage, getReactionsInMessageById } from "./api/reactions";
 import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
 import { generateException } from "./util/exception_handling";
@@ -13,7 +13,7 @@ import  cors  from "cors";
 import { addMessage, handleGuildMessages } from "./message/guild_messages";
 import { regenerateMessage } from "./message/generate_message";
 import { ReactionRequest } from "./models/reaction_request";
-import { deleteMessage } from "./api/messages";
+import { deleteMessage, getMessageById } from "./api/messages";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -97,13 +97,32 @@ app.post("/user", async (req, res) => {
   }
 });
 
-app.get("/guild/:id", async (req, res) => {
+app.get("/guild/by-raw", async (req, res) => {
   try {
-    if (req.params.id) {
-      const guild = await getGuild(prisma, req.params.id.toString());
+    if (req.query.guildId) {
+      const guildId = String(req.query.guildId);
+      const guild = await getGuild(prisma, guildId);
       res.json(guild);
     } else {
-      res.status(400).send("This API requires: id (raw guild id)");
+      res.status(400).send("This API requires: guildId (raw guild id)");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+app.get("/guild/by-id", async (req, res) => {
+  try {
+    if (req.query.guildId) {
+      const guildId = Number(req.query.guildId);
+      const guild = await getGuildById(prisma, guildId);
+      if (!guild) {
+        res.status(400).send("Invalid guild identifier (non-raw).");
+      } else {
+        res.json(guild);
+      }
+    } else {
+      res.status(400).send("This API requires: id (non-raw)");
     }
   } catch (e: any) {
     generateException(res, e);
@@ -371,11 +390,27 @@ app.post("/message/regenerate", async (req, res) => {
   }
 });
 
+// Delete a message (and all of the reactions)
 app.delete("/message", async (req, res) => {
   try {
     if (req.query.id) {
       const messageId = Number(req.query.id);
       const result = await deleteMessage(prisma, messageId);
+      res.json(result);
+    } else {
+      res.status(400).send("This API requires: messageId (non-raw)");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+// Get a message
+app.get("/message", async (req, res) => {
+  try {
+    if (req.query.id) {
+      const messageId = Number(req.query.id);
+      const result = await getMessageById(prisma, messageId);
       res.json(result);
     } else {
       res.status(400).send("This API requires: messageId (non-raw)");
