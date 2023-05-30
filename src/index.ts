@@ -13,6 +13,7 @@ import  cors  from "cors";
 import { addMessage, handleGuildMessages } from "./message/guild_messages";
 import { regenerateMessage } from "./message/generate_message";
 import { ReactionRequest } from "./models/reaction_request";
+import { deleteMessage } from "./api/messages";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -362,6 +363,20 @@ app.post("/message/regenerate", async (req, res) => {
       const messageId = Number(req.body.messageId);
       await regenerateMessage(prisma, client, messageId);
       res.send("Generated/Regenerated message successfully!");
+    } else {
+      res.status(400).send("This API requires: messageId (non-raw)");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+app.delete("/message", async (req, res) => {
+  try {
+    if (req.query.id) {
+      const messageId = Number(req.query.id);
+      const result = await deleteMessage(prisma, messageId);
+      res.json(result);
     } else {
       res.status(400).send("This API requires: messageId (non-raw)");
     }

@@ -19,3 +19,31 @@ export async function getMessageById(prisma: PrismaClient, id: number) {
     });
     return message;
 }
+
+export async function deleteMessage(prisma: PrismaClient, messageId: number) {
+    const existingMessage = await prisma.message.findUnique({
+        where: {
+            id: messageId
+        }
+    });
+
+    if (!existingMessage) {
+        return false;
+    }
+
+    // Delete message and all reactions associated
+    const result = await prisma.message.delete({
+        where: {
+            id: messageId
+        },
+        include: {
+            reactions: true
+        }
+    });
+
+    if (!result) {
+        return false;
+    }
+
+    return true;
+}
