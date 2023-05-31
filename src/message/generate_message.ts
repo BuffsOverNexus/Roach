@@ -22,14 +22,43 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
     if (savedMessage) {
         const guild = client.guilds.cache.get(savedMessage.guild.rawId);
 
+        // Get all saved messages
+        const savedMessages = await prisma.message.findMany({
+            where: {
+                guildId: savedMessage.guild.id
+            }
+        });
+
+        
         if (guild) {
+            
             // Determine if the message still exists in the guild.
             const channel = guild.channels.cache.get(savedMessage.guild.channelId);
+            // Gather all 
+            
             
             if (channel instanceof TextChannel) {
+                // Get all saved messages
+                const savedMessages = await prisma.message.findMany({
+                    where: {
+                        guildId: savedMessage.guild.id
+                    }
+                });
+                const allMessages = await channel.messages.fetch();
+                
+                allMessages.forEach(message => {
+                    console.log(allMessages);
+                    const exists = savedMessages.filter(savedMessage => savedMessage.rawId == message.id).length != 0;
+                    console.log(exists);
+                    if (!exists) {
+                        message.delete();
+                    }
+                })
+
                 const contents = getMessageContents(guild, savedMessage.reactions);
                 // Determine if the message exists...
                 if (savedMessage.rawId) {
+                    // Now delete the message
                     const message = await channel.messages.fetch(savedMessage.rawId);
                     if (message) {
                         // Message exists. Just update it.

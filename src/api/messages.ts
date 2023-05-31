@@ -31,13 +31,16 @@ export async function deleteMessage(prisma: PrismaClient, messageId: number) {
         return false;
     }
 
+    const deleteReactions = await prisma.reaction.deleteMany({
+        where: {
+            messageId: messageId
+        }
+    });
+
     // Delete message and all reactions associated
     const result = await prisma.message.delete({
         where: {
             id: messageId
-        },
-        include: {
-            reactions: true
         }
     });
 
