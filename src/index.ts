@@ -6,7 +6,7 @@ import { handleAddReaction, handleRemoveMessage } from "./reaction/add_reaction"
 import { createUser, getUser } from "./api/users";
 import { handleRemoveReaction } from "./reaction/remove_reaction";
 import { createGuild, getGuild, getGuildById, getGuildsFromUser, updateChannelInGuild } from "./api/guilds";
-import { createReaction, createReactions, getMessageReactionsInGuild, getReactionsInMessage, getReactionsInMessageById } from "./api/reactions";
+import { createReaction, createReactions, deleteReaction, getMessageReactionsInGuild, getReactionsInMessage, getReactionsInMessageById } from "./api/reactions";
 import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
 import { generateException } from "./util/exception_handling";
 import  cors  from "cors";
@@ -343,6 +343,20 @@ app.get("/reactions/by-guild", async (req, res) => {
   }
 });
 
+app.delete("/reaction", async (req, res) => {
+  try {
+    if (req.query.reactionId) {
+      const reactionId = Number(req.query.reactionId);
+      const result = await deleteReaction(prisma, reactionId);
+      res.json(result);
+    } else {
+      res.status(400).send("This API requires: reactionId");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
 // Retrieve all messages of a guild.
 app.get("/messages", async (req, res) => {
   try {
@@ -381,7 +395,7 @@ app.post("/message/regenerate", async (req, res) => {
     if (req.body.messageId) {
       const messageId = Number(req.body.messageId);
       await regenerateMessage(prisma, client, messageId);
-      res.send("Generated/Regenerated message successfully!");
+      res.json("Generated/Regenerated message successfully!");
     } else {
       res.status(400).send("This API requires: messageId (non-raw)");
     }

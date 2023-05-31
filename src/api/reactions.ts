@@ -150,3 +150,22 @@ export async function getMessageReactionsInGuild(prisma: PrismaClient, guildId: 
         return [];
     }
 }
+
+export async function deleteReaction(prisma: PrismaClient, reactionId: number) {
+    const existingReaction = await prisma.reaction.findUnique({
+        where: {
+            id: reactionId
+        }
+    });
+
+    if (existingReaction) {
+        const result = await prisma.reaction.delete({
+            where: {
+                id: reactionId
+            }
+        });
+        return result;
+    } else {
+        throw new Error(`The reaction with id, ${reactionId}, does not exist.`);
+    }
+}
