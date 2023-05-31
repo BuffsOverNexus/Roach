@@ -49,8 +49,8 @@ model Message {
 model Reaction {
   id        Int       @id @default(autoincrement())
   createdAt DateTime  @default(now())
-  emoteId   String    @unique
-  roleId    String    @unique
+  emoteId   String    
+  roleId    String    
   roleName  String
   // All reactions have one message.
   message   Message   @relation(fields: [messageId], references: [id])
