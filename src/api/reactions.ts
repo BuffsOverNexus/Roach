@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, Reaction } from "@prisma/client";
+import { PrismaClient, Reaction } from "@prisma/client";
 import { getGuild } from "./guilds";
 import { getMessageById } from "./messages";
 import { ReactionRequest } from "../models/reaction_request";
