@@ -22,6 +22,7 @@ export async function createReaction(prisma: PrismaClient, messageId: number, ro
         where: {
             roleId: roleId,
             emoteId: emoteId,
+            messageId: message.id
         }
     });
 
