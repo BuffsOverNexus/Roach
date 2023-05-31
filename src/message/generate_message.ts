@@ -47,9 +47,7 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
                 const allMessages = await channel.messages.fetch();
                 
                 allMessages.forEach(message => {
-                    console.log(allMessages);
                     const exists = savedMessages.filter(savedMessage => savedMessage.rawId == message.id).length != 0;
-                    console.log(exists);
                     if (!exists) {
                         message.delete();
                     }
