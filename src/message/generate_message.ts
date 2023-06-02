@@ -41,7 +41,7 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
                     }
                 })
 
-                const contents = getMessageContents(guild, savedMessage);
+                const contents = getMessageContents(guild, savedMessage.reactions, savedMessage.subject);
                 // Determine if the message exists...
                 if (savedMessage.rawId) {
                     // Now delete the message
@@ -99,10 +99,9 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
     }
 }
 
-function getMessageContents(guild: Guild, message: Message & {reactions: Reaction[]; guild: Guild;}) {
+function getMessageContents(guild: Guild, reactions: Reaction[], subject: string) {
     // Populate all of the fields
     const fields: any = [];
-    const reactions: Reaction[] = message.reactions;
 
     if (reactions.length > 0) {
         // Generate the contents.
@@ -117,7 +116,7 @@ function getMessageContents(guild: Guild, message: Message & {reactions: Reactio
 
         // Create the message contents
         const contents = new EmbedBuilder()
-        .setTitle(message.subject)
+        .setTitle(subject)
         .setDescription("**+** React to this message to receive a role. \n**-** Remove the reaction to take away the role.")
         .setFooter({ text: "Powered by Roach" })
         .addFields(fields);
