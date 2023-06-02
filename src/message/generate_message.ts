@@ -100,26 +100,23 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
 }
 
 function getMessageContents(guild: Guild, reactions: Reaction[], subject: string) {
-    // Populate all of the fields
-    const fields: any = [];
-
     if (reactions.length > 0) {
         // Generate the contents.
+        let description = "";
         reactions.forEach(reaction => {
             const role = guild.roles.cache.get(reaction.roleId);
             const emote = guild.emojis.cache.get(reaction.emoteId);
             if (role && emote) {
                 const emoteName = emote.name;
-                fields.push({ name: ``, value: `<:${emoteName}:${reaction.emoteId}> <@&${role.id}>` });
+                description += "\n" + `<:${emoteName}:${reaction.emoteId}> <@&${role.id}>`;
             }
         });
 
         // Create the message contents
         const contents = new EmbedBuilder()
         .setTitle(subject)
-        .setDescription("**+** React to this message to receive a role. \n**-** Remove the reaction to take away the role.")
+        .setDescription("**+** React to this message to receive a role. \n**-** Remove the reaction to take away the role.\n" + description)
         .setFooter({ text: "Powered by Roach" })
-        .addFields(fields);
 
         return contents;
     } else {
