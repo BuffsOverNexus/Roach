@@ -110,7 +110,7 @@ function getMessageContents(guild: Guild, reactions: Reaction[], subject: string
             const emote = guild.emojis.cache.get(reaction.emoteId);
             if (role && emote) {
                 const emoteName = emote.name;
-                fields.push({ value: `<:${emoteName}:${reaction.emoteId}> <@&${role.id}>` });
+                fields.push({ name: ``, value: `<:${emoteName}:${reaction.emoteId}> <@&${role.id}>` });
             }
         });
 
