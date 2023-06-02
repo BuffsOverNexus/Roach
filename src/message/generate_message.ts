@@ -1,4 +1,4 @@
-import { PrismaClient, Reaction } from "@prisma/client";
+import { Message, PrismaClient, Reaction } from "@prisma/client";
 import { Client, TextChannel, EmbedBuilder, Guild } from "discord.js";
 
 /**
@@ -20,23 +20,11 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
     });
 
     if (savedMessage) {
-        const guild = client.guilds.cache.get(savedMessage.guild.rawId);
-
-        // Get all saved messages
-        const savedMessages = await prisma.message.findMany({
-            where: {
-                guildId: savedMessage.guild.id
-            }
-        });
-
-        
+        const guild = client.guilds.cache.get(savedMessage.guild.rawId);        
         if (guild) {
-            
             // Determine if the message still exists in the guild.
             const channel = guild.channels.cache.get(savedMessage.guild.channelId);
-            // Gather all 
-            
-            
+        
             if (channel instanceof TextChannel) {
                 // Get all saved messages
                 const savedMessages = await prisma.message.findMany({
@@ -53,7 +41,7 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
                     }
                 })
 
-                const contents = getMessageContents(guild, savedMessage.reactions);
+                const contents = getMessageContents(guild, savedMessage);
                 // Determine if the message exists...
                 if (savedMessage.rawId) {
                     // Now delete the message
@@ -111,9 +99,10 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
     }
 }
 
-function getMessageContents(guild: Guild, reactions: Reaction[]) {
+function getMessageContents(guild: Guild, message: Message & {reactions: Reaction[]; guild: Guild;}) {
     // Populate all of the fields
     const fields: any = [];
+    const reactions: Reaction[] = message.reactions;
 
     if (reactions.length > 0) {
         // Generate the contents.
@@ -122,13 +111,13 @@ function getMessageContents(guild: Guild, reactions: Reaction[]) {
             const emote = guild.emojis.cache.get(reaction.emoteId);
             if (role && emote) {
                 const emoteName = emote.name;
-                fields.push({ name: `${role.name}`, value: `<:${emoteName}:${reaction.emoteId}> <@&${role.id}>` });
+                fields.push({ value: `<:${emoteName}:${reaction.emoteId}> <@&${role.id}>` });
             }
         });
 
         // Create the message contents
         const contents = new EmbedBuilder()
-        .setTitle("Select Your Roles")
+        .setTitle(message.subject)
         .setDescription("**+** React to this message to receive a role. \n**-** Remove the reaction to take away the role.")
         .setFooter({ text: "Powered by Roach" })
         .addFields(fields);
