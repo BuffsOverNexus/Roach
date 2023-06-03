@@ -170,3 +170,9 @@ export async function deleteReaction(prisma: PrismaClient, reactionId: number) {
         throw new Error(`The reaction with id, ${reactionId}, does not exist.`);
     }
 }
+
+export async function getAllReactions(prisma: PrismaClient) {
+    const reactions = await prisma.reaction.findMany();
+
+    return reactions;
+}

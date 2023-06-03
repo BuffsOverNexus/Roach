@@ -1,12 +1,12 @@
 import { PrismaClient, User } from "@prisma/client";
-import { Client, GatewayIntentBits, Message, PartialMessage, Partials } from 'discord.js';
+import { ActivityType, Client, GatewayIntentBits, Message, PartialMessage, Partials } from 'discord.js';
 import express from "express";
 import session from "express-session";
 import { handleAddReaction, handleRemoveMessage } from "./reaction/add_reaction";
 import { createUser, getUser } from "./api/users";
 import { handleRemoveReaction } from "./reaction/remove_reaction";
 import { createGuild, getGuild, getGuildById, getGuildsFromUser, updateChannelInGuild } from "./api/guilds";
-import { createReaction, createReactions, deleteReaction, getMessageReactionsInGuild, getReactionsInMessage, getReactionsInMessageById } from "./api/reactions";
+import { createReaction, createReactions, deleteReaction, getAllReactions, getMessageReactionsInGuild, getReactionsInMessage, getReactionsInMessageById } from "./api/reactions";
 import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwnedByUser, getAllRolesInGuild } from "./api/discord";
 import { generateException } from "./util/exception_handling";
 import  cors  from "cors";
@@ -439,6 +439,15 @@ app.get("/message", async (req, res) => {
 client.on('ready', async () => {
   console.log('Mounting Roach...!');
   console.log("Roach is ready to ride!");
+  const discordCount = client.guilds.cache.size;
+  client.user?.setPresence({
+    status: 'online',
+    activities: [{
+      name: `${discordCount} discords!`,
+      type: ActivityType.Watching
+    }]
+  });
+  console.log(`Number of Discords: ${discordCount}`);
   app.listen(port, () => {
     console.log('Server is running on https://%s:%s', host, port);
   });
