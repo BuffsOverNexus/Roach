@@ -13,7 +13,11 @@ router.get("/user/:id", async (req: Request, res: Response) => {
     if (req.params.id) {
       const userId = req.params.id;
       const user = await getUser(prisma, userId);
-      res.json(user);
+
+      if (user)
+        res.json(user);
+      else
+        res.status(400).send("You must enter in a valid userId");
     } else {
       res.status(400).send("This API requires: id (userId)");
     }
