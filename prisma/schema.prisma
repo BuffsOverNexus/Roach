@@ -41,6 +41,7 @@ model Message {
   guildId   Int
   // This is the title subject of the role reactions.
   subject     String
+  description String?
   // Messages can have many reactions
   reactions  Reaction[]
 }
