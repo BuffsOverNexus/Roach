@@ -29,3 +29,21 @@ export async function getUser(prisma: PrismaClient, userId: string) {
     });
     return user;
 }
+
+export async function patchUserLastLogin(prisma: PrismaClient, userId: string) {
+    const user = await prisma.user.findUnique({
+        where: { rawId: userId }
+    });
+
+    if (user) {
+        const updatedUser = prisma.user.update({
+            where: { rawId: userId },
+            data: {
+                lastLogin: new Date()
+            }
+        });
+        return updatedUser;
+    } else {
+        throw new Error("Unable to update user due to invalid user id.");
+    }
+}

@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { createUser, getUser } from "../api/users";
+import { createUser, getUser, patchUserLastLogin } from "../api/users";
 import express, { Request, Response, Router } from "express";
 import { generateException } from "../util/exception_handling";
 import { getGuildsFromUser } from "../api/guilds";
@@ -43,6 +43,20 @@ router.get("/user/guild/:id", async (req, res) => {
       res.json(guilds);
     } else {
       res.status(400).send("This API requires: id (user's raw id)");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+router.patch("/user/lastLogin", async (req, res) => {
+  try {
+    if (req.query.userId) {
+      const userId = String(req.query.userId);
+      const updatedUser = await patchUserLastLogin(prisma, userId);
+      res.json(updatedUser);
+    } else {
+      res.status(400).send("This API requires: userId (user raw id)");
     }
   } catch (e: any) {
     generateException(res, e);
