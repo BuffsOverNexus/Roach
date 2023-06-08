@@ -92,7 +92,7 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
                             rawId: addedMessage.id
                         }
                     });
-                    
+
                     savedMessage.reactions.forEach(async reaction => {
                         await addedMessage.react(reaction.emoteId);
                     });
@@ -137,22 +137,4 @@ function getMessageContents(guild: Guild, reactions: Reaction[], subject: string
         .setFooter({ text: "Powered by Roach" });
         return contents;
     }
-}
-
-function handleReactions(savedMessage: any, existingReactions: Collection<string, MessageReaction>, message: any) {
-    // Remove any existing reactions that no longer are needed
-    existingReactions.forEach(async existingReaction => {
-        const removeReaction = savedMessage.reactions.filter(savedReaction => savedReaction.emoteId == existingReaction.emoji.identifier).length == 0;
-        if (removeReaction) {
-            await existingReaction.remove();
-        }
-    });
-
-    // Add any non-existing reactions
-    savedMessage.reactions.forEach(async reaction => {
-        const existingReaction = await message.reactions.resolveId(reaction.emoteId);
-        if (!existingReaction) {
-            await message.react(reaction.emoteId);
-        }
-    });
 }
