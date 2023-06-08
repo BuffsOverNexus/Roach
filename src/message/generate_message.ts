@@ -52,7 +52,7 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
                         const existingReactions = await message.reactions.cache;
                         // Remove any existing reactions that no longer are needed
                         existingReactions.forEach(async existingReaction => {
-                            const removeReaction = savedMessage.reactions.filter(savedReaction => savedReaction.emoteId == existingReaction.emoji.identifier).length == 0;
+                            const removeReaction = savedMessage.reactions.filter(savedReaction => savedReaction.emoteId == existingReaction.emoji.id).length == 0;
                             if (removeReaction) {
                                 await existingReaction.remove();
                             }
@@ -60,8 +60,8 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
 
                         // Add any non-existing reactions
                         savedMessage.reactions.forEach(async reaction => {
-                            const existingReaction = await message.reactions.resolveId(reaction.emoteId);
-                            if (!existingReaction) {
+                            const reactionDoesntExist = await message.reactions.cache.filter(savedReaction => savedReaction.emoji.id == reaction.emoteId).size == 0;
+                            if (reactionDoesntExist) {
                                 await message.react(reaction.emoteId);
                             }
                         });
