@@ -16,6 +16,7 @@ model User {
   lastLogin DateTime @default(now())
   createdAt DateTime @default(now())
   name      String
+  admin     Boolean @default(false)
   // A user can have many guilds.
   guilds    Guild[]
 }
