@@ -82,3 +82,10 @@ export async function updateChannelInGuild(prisma: PrismaClient, guildId: string
         throw Error("The guildId you entered is not valid.");
     }
 }
+
+export async function getGuildById(prisma: PrismaClient, id: number) {
+    const guild = await prisma.guild.findUnique({
+        where: { id: id }
+    });
+    return guild;
+}

@@ -23,20 +23,19 @@ export async function handleGuildMessages(prisma: PrismaClient, guildId: string)
 }
 
 export async function addMessage(prisma: PrismaClient, guildId: string, subject: string) {
+    const guild = await getGuild(prisma, guildId);
     // First, determine if the message already exists.
-    const existingMessage = await prisma.message.findFirst({
-        where: {
-            subject: subject
-        }
-    });
+    if (guild) {
+        const existingMessage = await prisma.message.findFirst({
+            where: {
+                subject: subject,
+                guildId: guild.id
+            }
+        });
 
-    if (existingMessage) {
-        return existingMessage;
-    } else {
-        // Add the message.
-        const guild = await getGuild(prisma, guildId);
-
-        if (guild) {
+        if (existingMessage) {
+            return existingMessage;
+        } else {
             const createdMessage = await prisma.message.create({
                 data: {
                     subject: subject,
@@ -45,8 +44,9 @@ export async function addMessage(prisma: PrismaClient, guildId: string, subject:
             });
 
             return createdMessage;
-        } else {
-            throw new Error("Invalid guildId was entered when creating message: " + guildId);
         }
+    } else {
+        throw new Error("Invalid guildId was entered when creating message: " + guildId);
     }
+    
 }

@@ -1,5 +1,5 @@
-import { PrismaClient, Reaction } from "@prisma/client";
-import { Client, TextChannel, EmbedBuilder, Guild } from "discord.js";
+import { Message, PrismaClient, Reaction } from "@prisma/client";
+import { Client, TextChannel, EmbedBuilder, Guild, MessageReaction, Collection } from "discord.js";
 
 /**
  * 
@@ -20,23 +20,50 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
     });
 
     if (savedMessage) {
-        const guild = client.guilds.cache.get(savedMessage.guild.rawId);
-
+        const guild = client.guilds.cache.get(savedMessage.guild.rawId);        
         if (guild) {
             // Determine if the message still exists in the guild.
             const channel = guild.channels.cache.get(savedMessage.guild.channelId);
-            
+        
             if (channel instanceof TextChannel) {
-                const contents = getMessageContents(guild, savedMessage.reactions);
+                // Get all saved messages
+                const savedMessages = await prisma.message.findMany({
+                    where: {
+                        guildId: savedMessage.guild.id
+                    }
+                });
+                const allMessages = await channel.messages.fetch();
+                
+                allMessages.forEach(message => {
+                    const exists = savedMessages.filter(savedMessage => savedMessage.rawId == message.id).length != 0;
+                    if (!exists) {
+                        message.delete();
+                    }
+                })
+
+                const contents = getMessageContents(guild, savedMessage.reactions, savedMessage.subject);
                 // Determine if the message exists...
                 if (savedMessage.rawId) {
                     const message = await channel.messages.fetch(savedMessage.rawId);
+
                     if (message) {
                         // Message exists. Just update it.
                         await message.edit({ embeds: [contents] });
-                        await message.reactions.removeAll();
+                        const existingReactions = await message.reactions.cache;
+                        // Remove any existing reactions that no longer are needed
+                        existingReactions.forEach(async existingReaction => {
+                            const removeReaction = savedMessage.reactions.filter(savedReaction => savedReaction.emoteId == existingReaction.emoji.id).length == 0;
+                            if (removeReaction) {
+                                await existingReaction.remove();
+                            }
+                        });
+
+                        // Add any non-existing reactions
                         savedMessage.reactions.forEach(async reaction => {
-                            await message.react(reaction.emoteId);
+                            const reactionDoesntExist = await message.reactions.cache.filter(savedReaction => savedReaction.emoji.id == reaction.emoteId).size == 0;
+                            if (reactionDoesntExist) {
+                                await message.react(reaction.emoteId);
+                            }
                         });
                     } else {
                         // Generating new message.
@@ -51,7 +78,6 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
                             }
                         });
 
-                        await addedMessage.reactions.removeAll();
                         savedMessage.reactions.forEach(async reaction => {
                             await addedMessage.react(reaction.emoteId);
                         });
@@ -67,7 +93,6 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
                         }
                     });
 
-                    await addedMessage.reactions.removeAll();
                     savedMessage.reactions.forEach(async reaction => {
                         await addedMessage.react(reaction.emoteId);
                     });
@@ -84,27 +109,24 @@ export async function regenerateMessage(prisma: PrismaClient, client: Client, me
     }
 }
 
-function getMessageContents(guild: Guild, reactions: Reaction[]) {
-    // Populate all of the fields
-    const fields: any = [];
-
+function getMessageContents(guild: Guild, reactions: Reaction[], subject: string) {
     if (reactions.length > 0) {
         // Generate the contents.
+        let description = "";
         reactions.forEach(reaction => {
             const role = guild.roles.cache.get(reaction.roleId);
             const emote = guild.emojis.cache.get(reaction.emoteId);
             if (role && emote) {
                 const emoteName = emote.name;
-                fields.push({ name: `${role.name}`, value: `<:${emoteName}:${reaction.emoteId}> <@&${role.id}>` });
+                description += "\n" + `<:${emoteName}:${reaction.emoteId}> <@&${role.id}>`;
             }
         });
 
         // Create the message contents
         const contents = new EmbedBuilder()
-        .setTitle("Select Your Roles")
-        .setDescription("**+** React to this message to receive a role. \n**-** Remove the reaction to take away the role.")
+        .setTitle(subject)
+        .setDescription("**+** React to this message to receive a role. \n**-** Remove the reaction to take away the role.\n" + description)
         .setFooter({ text: "Powered by Roach" })
-        .addFields(fields);
 
         return contents;
     } else {

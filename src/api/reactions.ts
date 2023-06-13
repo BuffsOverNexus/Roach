@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, Reaction } from "@prisma/client";
+import { PrismaClient, Reaction } from "@prisma/client";
 import { getGuild } from "./guilds";
 import { getMessageById } from "./messages";
 import { ReactionRequest } from "../models/reaction_request";
@@ -22,6 +22,7 @@ export async function createReaction(prisma: PrismaClient, messageId: number, ro
         where: {
             roleId: roleId,
             emoteId: emoteId,
+            messageId: message.id
         }
     });
 
@@ -149,4 +150,29 @@ export async function getMessageReactionsInGuild(prisma: PrismaClient, guildId: 
     } else {
         return [];
     }
+}
+
+export async function deleteReaction(prisma: PrismaClient, reactionId: number) {
+    const existingReaction = await prisma.reaction.findUnique({
+        where: {
+            id: reactionId
+        }
+    });
+
+    if (existingReaction) {
+        const result = await prisma.reaction.delete({
+            where: {
+                id: reactionId
+            }
+        });
+        return result;
+    } else {
+        throw new Error(`The reaction with id, ${reactionId}, does not exist.`);
+    }
+}
+
+export async function getAllReactions(prisma: PrismaClient) {
+    const reactions = await prisma.reaction.findMany();
+
+    return reactions;
 }

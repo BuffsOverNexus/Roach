@@ -16,6 +16,7 @@ model User {
   lastLogin DateTime @default(now())
   createdAt DateTime @default(now())
   name      String
+  admin     Boolean @default(false)
   // A user can have many guilds.
   guilds    Guild[]
 }
@@ -41,6 +42,7 @@ model Message {
   guildId   Int
   // This is the title subject of the role reactions.
   subject     String
+  description String?
   // Messages can have many reactions
   reactions  Reaction[]
 }
@@ -49,8 +51,8 @@ model Message {
 model Reaction {
   id        Int       @id @default(autoincrement())
   createdAt DateTime  @default(now())
-  emoteId   String    @unique
-  roleId    String    @unique
+  emoteId   String    
+  roleId    String    
   roleName  String
   // All reactions have one message.
   message   Message   @relation(fields: [messageId], references: [id])
