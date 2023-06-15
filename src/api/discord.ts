@@ -1,4 +1,4 @@
-import { ChannelType, Client } from "discord.js";
+import { ChannelType, Client, GuildMember } from "discord.js";
 import { GuildResponse } from "../models/guild_response";
 import { GuildRole } from "../models/guild_role";
 import { GuildEmote } from "../models/guild_emote";
@@ -32,7 +32,25 @@ export async function getAllGuildsOwnedByUser(prisma: PrismaClient, client: Clie
             id: guild.id,
             ownerId: guild.ownerId,
             name: guild.name,
-            exists: false
+            exists: false,
+            owner: true
+        });
+    });
+
+    guilds.forEach((guild) => {
+        // Grab all Discords the user is administrator in
+
+        guild.members.cache.forEach((member) => {
+            if (member.permissions.has('Administrator') && guild.ownerId !== userId) {
+                // Add to guild response
+                guildResponses.push({
+                    id: guild.id,
+                    ownerId: guild.ownerId,
+                    name: guild.name,
+                    exists: false,
+                    owner: false
+                });
+            }
         });
     });
 
