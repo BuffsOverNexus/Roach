@@ -5,5 +5,6 @@ export interface GuildResponse {
     name: string,
     ownerId: string,
     exists: boolean,
-    owner: boolean
+    owner: boolean,
+    icon: string | null
 }

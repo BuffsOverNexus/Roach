@@ -33,7 +33,8 @@ export async function getAllGuildsOwnedByUser(prisma: PrismaClient, client: Clie
             ownerId: guild.ownerId,
             name: guild.name,
             exists: false,
-            owner: true
+            owner: true,
+            icon: guild.iconURL()
         });
     });
 
@@ -48,7 +49,8 @@ export async function getAllGuildsOwnedByUser(prisma: PrismaClient, client: Clie
                     ownerId: guild.ownerId,
                     name: guild.name,
                     exists: false,
-                    owner: false
+                    owner: false,
+                    icon: guild.iconURL()
                 });
             }
         });
