@@ -47,3 +47,13 @@ export async function patchUserLastLogin(prisma: PrismaClient, userId: string) {
         throw new Error("Unable to update user due to invalid user id.");
     }
 }
+
+export async function getUserById(prisma: PrismaClient, id: number) {
+    const user = await prisma.user.findUnique({
+        where: {
+            id
+        }
+    });
+
+    return user;
+}
