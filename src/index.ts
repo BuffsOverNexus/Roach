@@ -170,6 +170,19 @@ app.post("/message/regenerate", async (req, res) => {
   }
 });
 
+app.get("/discord/guilds/admin", async (req, res) => {
+  try {
+    if (req.query.userId) {
+      const userId = String(req.query.userId);
+      const guilds = await getAllGuildsOwnedByUser(prisma, client, userId);
+      res.json(guilds);
+    } else {
+      res.status(400).send("This API requires: userId");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
 
 
 

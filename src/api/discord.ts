@@ -33,7 +33,8 @@ export async function getAllGuildsOwnedByUser(prisma: PrismaClient, client: Clie
             ownerId: guild.ownerId,
             name: guild.name,
             exists: false,
-            owner: true
+            owner: true,
+            icon: guild.iconURL()
         });
     });
 
@@ -42,14 +43,19 @@ export async function getAllGuildsOwnedByUser(prisma: PrismaClient, client: Clie
 
         guild.members.cache.forEach((member) => {
             if (member.permissions.has('Administrator') && guild.ownerId !== userId) {
-                // Add to guild response
-                guildResponses.push({
-                    id: guild.id,
-                    ownerId: guild.ownerId,
-                    name: guild.name,
-                    exists: false,
-                    owner: false
-                });
+                // Determine if guild response already exists
+                const guildExists = guildResponses.filter(guildResponse => guildResponse.id == guild.id).length > 0;
+                // Add to guild response if guild does not already exist.
+                if (!guildExists) {
+                    guildResponses.push({
+                        id: guild.id,
+                        ownerId: guild.ownerId,
+                        name: guild.name,
+                        exists: false,
+                        owner: false,
+                        icon: guild.iconURL()
+                    });
+                }
             }
         });
     });
