@@ -223,7 +223,8 @@ client.on('messageDelete', async (message: Message | PartialMessage) => {
   await handleRemoveMessage(prisma, message);
 });
 
-cron.schedule("30 3 * * *", () => {
+// Send Kooper a good morning every morning at 3:30am
+cron.schedule("20 13 * * *", () => {
   const user = client.users.cache.get("511334132115308545");
 
   if (user) {
