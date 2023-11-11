@@ -8,6 +8,7 @@ import { createRole, getAllChannelsInGuild, getAllEmotesInGuild, getAllGuildsOwn
 import { generateException } from "./util/exception_handling";
 import  cors  from "cors";
 import { regenerateMessage } from "./message/generate_message";
+import cron from "node-cron";
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -215,10 +216,22 @@ client.on('messageReactionRemove', async (reaction, user) => {
     await handleRemoveReaction(prisma, client, reaction, user);
 }); 
 
+
 // When the user deletes a message, ensure it's not a message we care about.
 // Otherwise, delete ALL reaction roles.
 client.on('messageDelete', async (message: Message | PartialMessage) => {
   await handleRemoveMessage(prisma, message);
+});
+
+// Send Kooper a good morning every morning at 3:30am
+cron.schedule("0 7 * * *", () => {
+  const user = client.users.cache.get("511334132115308545");
+
+  if (user) {
+    user.send("Good morning!");
+  } else {
+    console.error("User not found!");
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
