@@ -224,7 +224,7 @@ client.on('messageDelete', async (message: Message | PartialMessage) => {
 });
 
 // Send Kooper a good morning every morning at 3:30am
-cron.schedule("00 7 * * *", () => {
+cron.schedule("0 7 * * *", () => {
   const user = client.users.cache.get("511334132115308545");
 
   if (user) {
