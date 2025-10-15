@@ -1,9 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 
 
 export async function createUser(prisma: PrismaClient, userId: string, name: string) {
     // Check if user exists
-    const existingUser = await getUser(prisma, userId);
+    const existingUser: User | null = await getUser(prisma, userId);
     if (!existingUser) {
         const createdUser = await prisma.user.create({
             data: {

@@ -68,10 +68,10 @@ console.log("Environment: %s", environment);
 if (environment == "local")
   require("dotenv").config();
 
-app.use('/', users);
-app.use('/', reactions);
-app.use('/', messages);
-app.use('/', guilds);
+app.use('/', cors(), users);
+app.use('/', cors(), reactions);
+app.use('/', cors(), messages);
+app.use('/', cors(), guilds);
 
 /**
  * Retrieve all Roles in a Guild
