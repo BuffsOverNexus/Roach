@@ -50,3 +50,30 @@ export async function deleteMessage(prisma: PrismaClient, messageId: number) {
 
     return true;
 }
+
+export async function updateMessage(prisma: PrismaClient, messageId: number, subject: string) {
+    const existingMessage = await prisma.message.findUnique({
+        where: {
+            id: messageId
+        }
+    });
+
+    if (!existingMessage) {
+        return false;
+    }
+
+    const result = await prisma.message.update({
+        where: {
+            id: messageId
+        },
+        data: {
+            subject: subject
+        }
+    });
+
+    if (!result) {
+        return false;
+    }
+
+    return true;
+}

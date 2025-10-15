@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import express, { Request, Response, Router } from "express";
 import { generateException } from "../util/exception_handling";
-import { deleteMessage, getMessageById } from "../api/messages";
+import { deleteMessage, getMessageById, updateMessage } from "../api/messages";
 import { regenerateMessage } from "../message/generate_message";
 import { handleGuildMessages, addMessage } from "../message/guild_messages";
 
@@ -64,6 +64,23 @@ router.get("/message", async (req: Request, res: Response) => {
       res.json(result);
     } else {
       res.status(400).send("This API requires: messageId (non-raw)");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
+// Update a message
+router.patch("/message", async (req: Request, res: Response) => {
+  try {
+    if (req.body.id && req.body.subject) {
+      const messageId = Number(req.body.id);
+      const subject = String(req.body.subject);
+
+      const result = await updateMessage(prisma, messageId, subject);
+      res.json(result);
+    } else {
+      res.status(400).send("This API requires: messageId (non-raw), subject");
     }
   } catch (e: any) {
     generateException(res, e);
