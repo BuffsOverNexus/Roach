@@ -19,6 +19,7 @@ import users from './routing/users';
 import reactions from './routing/reactions';
 import messages from './routing/messages';
 import guilds from './routing/guilds';
+import birthdays from './routing/birthdays';
 
 
 
@@ -107,6 +108,7 @@ app.use('/', users);
 app.use('/', reactions);
 app.use('/', messages);
 app.use('/', guilds);
+app.use('/', birthdays);
 
 /**
  * Retrieve all Roles in a Guild

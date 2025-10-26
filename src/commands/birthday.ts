@@ -28,9 +28,16 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const day = interaction.options.getInteger('day', true);
-    const month = interaction.options.getInteger('month', true);
-    const timezone = interaction.options.getString('timezone', true);
+    // Some discord.js TypeScript setups don't expose the typed getters
+    // (getInteger/getString) on the options resolver. Use get(...) and
+    // read .value, then coerce safely.
+    const dayOpt = interaction.options.get('day', true);
+    const monthOpt = interaction.options.get('month', true);
+    const timezoneOpt = interaction.options.get('timezone', true);
+
+    const day = typeof dayOpt.value === 'number' ? dayOpt.value : parseInt(String(dayOpt.value), 10);
+    const month = typeof monthOpt.value === 'number' ? monthOpt.value : parseInt(String(monthOpt.value), 10);
+    const timezone = String(timezoneOpt.value);
 
     const prisma = new PrismaClient();
     
