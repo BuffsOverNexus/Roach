@@ -1,5 +1,5 @@
 import { PrismaClient, User } from "@prisma/client";
-import { ActivityType, Client, GatewayIntentBits, Message, PartialMessage, Partials } from 'discord.js';
+import { ActivityType, Client, Events, GatewayIntentBits, Message, PartialMessage, Partials, SlashCommandBuilder } from 'discord.js';
 import express from "express";
 import session from "express-session";
 import { handleAddReaction, handleRemoveMessage } from "./reaction/add_reaction";
@@ -9,6 +9,7 @@ import { generateException } from "./util/exception_handling";
 import  cors  from "cors";
 import { regenerateMessage } from "./message/generate_message";
 import cron from "node-cron";
+import * as birthdayCommand from './commands/birthday';
 
 const environment = process.env.RAILWAY_ENVIRONMENT || "local";
 const port = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ import users from './routing/users';
 import reactions from './routing/reactions';
 import messages from './routing/messages';
 import guilds from './routing/guilds';
+import birthdays from './routing/birthdays';
 
 
 
@@ -106,6 +108,7 @@ app.use('/', users);
 app.use('/', reactions);
 app.use('/', messages);
 app.use('/', guilds);
+app.use('/', birthdays);
 
 /**
  * Retrieve all Roles in a Guild
@@ -222,7 +225,7 @@ app.get("/discord/guilds/admin", async (req, res) => {
 
 
 // --- Discord Events ---
-client.on('ready', async () => {
+client.once(Events.ClientReady, async () => {
   console.log('Mounting Roach...!');
   console.log("Roach is ready to ride!");
   const discordCount = client.guilds.cache.size;
@@ -234,6 +237,16 @@ client.on('ready', async () => {
     }]
   });
   console.log(`Number of Discords: ${discordCount}`);
+  // Register slash command(s) on startup. This registers a global command — consider
+  // switching to guild-specific registration during development for faster updates.
+  try {
+    if (client.application) {
+      await client.application.commands.create(birthdayCommand.data as any);
+      console.log('Registered /birthday command');
+    }
+  } catch (e: any) {
+    console.error('Failed to register slash commands:', e?.message ?? e);
+  }
   app.listen(port, () => {
     console.log('Server is running on https://%s:%s', host, port);
   });
@@ -248,14 +261,30 @@ client.on('messageReactionAdd', async (reaction, user) => {
 client.on('messageReactionRemove', async (reaction, user) => {
   if (!user.bot)
     await handleRemoveReaction(prisma, client, reaction, user);
-}); 
-
+});
 
 // When the user deletes a message, ensure it's not a message we care about.
 // Otherwise, delete ALL reaction roles.
-client.on('messageDelete', async (message: Message | PartialMessage) => {
+client.on(Events.MessageDelete, async (message: Message | PartialMessage) => {
   await handleRemoveMessage(prisma, message);
 });
+
+// Handle slash command interactions
+client.on(Events.InteractionCreate, async (interaction) => {
+  try {
+    if (!interaction.isChatInputCommand()) return;
+    if (interaction.commandName === 'birthday') {
+      await birthdayCommand.execute(interaction);
+    }
+  } catch (e: any) {
+    console.error('Error while handling interaction:', e);
+    if (interaction.isRepliable()) {
+      try { await interaction.reply({ content: 'There was an error while executing this command.', ephemeral: true }); } catch {};
+    }
+  }
+});
+
+
 
 // Send Kooper a good morning every morning at 3:30am
 // cron.schedule("0 7 * * *", () => {
