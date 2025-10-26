@@ -48,7 +48,35 @@ const client = new Client({
 const app = express().disable("x-powered-by");
 
 // Express setup
-app.use(cors());
+// Configure CORS to only allow specific origins and support credentials (cookies)
+const allowedOrigins = [
+  // Add your production/frontend origin here
+  'https://roach.buffsovernexus.com',
+  // Common local dev origins - adjust port if needed
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests like Postman (no origin)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// If running behind a proxy (e.g. Railway/Heroku), enable trust proxy so secure cookies work
+if (environment !== 'local') {
+  app.set('trust proxy', 1);
+}
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.raw({ type: "application/vnd.custom-type" }));
 app.use(express.text({ type: "text/html" }));
@@ -58,7 +86,13 @@ app.use(
   session({
     secret: 'dbeavertypescriptjava',
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: {
+      // secure must be true for SameSite=None cookies; enable in non-local environments
+      secure: environment !== 'local',
+      // local dev: keep lax to avoid cross-site blocking; production: use 'none' so cross-site cookies work with credentials
+      sameSite: environment === 'local' ? 'lax' : 'none'
+    }
   })
 );
 
@@ -224,15 +258,15 @@ client.on('messageDelete', async (message: Message | PartialMessage) => {
 });
 
 // Send Kooper a good morning every morning at 3:30am
-cron.schedule("0 7 * * *", () => {
-  const user = client.users.cache.get("511334132115308545");
+// cron.schedule("0 7 * * *", () => {
+//   const user = client.users.cache.get("511334132115308545");
 
-  if (user) {
-    user.send("Good morning!");
-  } else {
-    console.error("User not found!");
-  }
-});
+//   if (user) {
+//     user.send("Good morning!");
+//   } else {
+//     console.error("User not found!");
+//   }
+// });
 
 client.login(process.env.DISCORD_TOKEN);
 
