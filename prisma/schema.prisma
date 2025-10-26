@@ -16,45 +16,60 @@ model User {
   lastLogin DateTime @default(now())
   createdAt DateTime @default(now())
   name      String
-  admin     Boolean @default(false)
+  admin     Boolean  @default(false)
   // A user can have many guilds.
   guilds    Guild[]
 }
 
 model Guild {
-  id          Int       @id @default(autoincrement())
-  rawId       String    @unique
+  id                   Int        @id @default(autoincrement())
+  rawId                String     @unique
   // A guild can have many messages
-  messages    Message[]
-  channelId   String
-  channelName String
-  name        String
+  messages             Message[]
+  channelId            String
+  channelName          String
+  name                 String
   // A user can have many guilds. A guild can only have one user.
-  user        User      @relation(fields: [userId], references: [id])
-  userId      Int
+  user                 User       @relation(fields: [userId], references: [id])
+  userId               Int
+  sendBirthdayMessages Boolean    @default(false) // Determines if the birthday feature is enabled or not.
+  birthdays            Birthday[]
 }
 
 model Message {
-  id        Int        @id @default(autoincrement())
-  createdAt DateTime   @default(now())
-  rawId     String?    @unique
-  guild     Guild      @relation(fields: [guildId], references: [id])
-  guildId   Int
+  id          Int        @id @default(autoincrement())
+  createdAt   DateTime   @default(now())
+  rawId       String?    @unique
+  guild       Guild      @relation(fields: [guildId], references: [id])
+  guildId     Int
   // This is the title subject of the role reactions.
   subject     String
   description String?
   // Messages can have many reactions
-  reactions  Reaction[]
+  reactions   Reaction[]
 }
 
 // Reaction (aka Reaction Message)
 model Reaction {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now())
-  emoteId   String    
-  roleId    String    
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  emoteId   String
+  roleId    String
   roleName  String
   // All reactions have one message.
-  message   Message   @relation(fields: [messageId], references: [id])
+  message   Message  @relation(fields: [messageId], references: [id])
   messageId Int
+}
+
+model Birthday {
+  @@unique([userId, guildId])
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  userId    String
+  username  String
+  guild     Guild    @relation(fields: [guildId], references: [id])
+  guildId   Int
+  day       Int
+  month     Int
+  timezone  String
 }
