@@ -40,3 +40,32 @@ export async function deleteBirthdayInGuild(prisma: PrismaClient, guildId: numbe
         return false;
     }
 }
+
+export async function getBirthdaysToday(prisma: PrismaClient, month: number, day: number) {
+    try {
+        const birthdays = await prisma.birthday.findMany({
+            where: {
+                month: month,
+                day: day
+            }
+        });
+        return birthdays;
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function getAllBirthdaysInGuild(prisma: PrismaClient, month: number, day: number, guildId: number) {
+    try {
+        const birthdays = await prisma.birthday.findMany({
+            where: {
+                month: month,
+                day: day,
+                guildId: guildId
+            }
+        });
+        return birthdays;
+    } catch (error) {
+        return [];
+    }
+}
