@@ -69,3 +69,21 @@ export async function getAllBirthdaysInGuild(prisma: PrismaClient, month: number
         return [];
     }
 }
+
+export async function createBirthdayInGuild(prisma: PrismaClient, guildId: number, userId: string, username: string, day: number, month: number, timezone: string) {
+    try {
+        const birthday = await prisma.birthday.create({
+            data: {
+                guildId,
+                userId,
+                day,
+                month,
+                timezone,
+                username
+            }
+        });
+        return birthday;
+    } catch (error) {
+        return null;
+    }
+}

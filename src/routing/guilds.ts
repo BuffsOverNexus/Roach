@@ -96,4 +96,18 @@ router.patch("/guild/channel", async (req, res) => {
   }
 });
 
+router.put("/guild/birthday", async (req, res) => {
+  try {
+    const { guildId, channelId } = req.body;
+    if (guildId && channelId) {
+      // Add logic to update birthday channel in guild here
+      res.status(200).send("Birthday channel updated successfully");
+    } else {
+      res.status(400).send("This API requires: guildId and channelId");
+    }
+  } catch (e: any) {
+    generateException(res, e);
+  }
+});
+
 export default router;

@@ -20,6 +20,7 @@ import reactions from './routing/reactions';
 import messages from './routing/messages';
 import guilds from './routing/guilds';
 import birthdays from './routing/birthdays';
+import birthdayCronJob from "./jobs/birthday-cron-job";
 
 
 
@@ -284,6 +285,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+// Create a cron job at midnight that sends happy birthday messages to a specific channel.
+cron.schedule("0 0 * * *", async () => {
+  console.log("Running daily birthday message job: " + new Date().toISOString());
+  // Add logic to send birthday messages here
+  await birthdayCronJob(prisma, client);
+  console.log("Completed daily birthday message job: " + new Date().toISOString());
+});
 
 
 // Send Kooper a good morning every morning at 3:30am
