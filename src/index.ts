@@ -293,18 +293,6 @@ cron.schedule("0 0 * * *", async () => {
   console.log("Completed daily birthday message job: " + new Date().toISOString());
 });
 
-
-// Send Kooper a good morning every morning at 3:30am
-// cron.schedule("0 7 * * *", () => {
-//   const user = client.users.cache.get("511334132115308545");
-
-//   if (user) {
-//     user.send("Good morning!");
-//   } else {
-//     console.error("User not found!");
-//   }
-// });
-
 client.login(process.env.DISCORD_TOKEN);
 
 
