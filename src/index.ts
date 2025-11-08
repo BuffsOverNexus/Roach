@@ -20,6 +20,7 @@ import reactions from './routing/reactions';
 import messages from './routing/messages';
 import guilds from './routing/guilds';
 import birthdays from './routing/birthdays';
+import birthdayCronJob from "./jobs/birthday-cron-job";
 
 
 
@@ -284,18 +285,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-
-
-// Send Kooper a good morning every morning at 3:30am
-// cron.schedule("0 7 * * *", () => {
-//   const user = client.users.cache.get("511334132115308545");
-
-//   if (user) {
-//     user.send("Good morning!");
-//   } else {
-//     console.error("User not found!");
-//   }
-// });
+// Create a cron job at midnight that sends happy birthday messages to a specific channel.
+cron.schedule("0 0 * * *", async () => {
+  console.log("Running daily birthday message job: " + new Date().toISOString());
+  // Add logic to send birthday messages here
+  await birthdayCronJob(prisma, client);
+  console.log("Completed daily birthday message job: " + new Date().toISOString());
+});
 
 client.login(process.env.DISCORD_TOKEN);
 

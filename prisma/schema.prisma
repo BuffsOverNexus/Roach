@@ -34,6 +34,7 @@ model Guild {
   userId               Int
   sendBirthdayMessages Boolean    @default(false) // Determines if the birthday feature is enabled or not.
   birthdays            Birthday[]
+  birthdayChannelId    String?    // The channel ID where birthday messages will be sent.
 }
 
 model Message {
